@@ -37,9 +37,11 @@ def sentence_list(FP,IncludeEOS=True):
         return open(FP,'rt').read().split('EOS')
 
 def file_appears_valid_p(FP,FtCnts,StrictP=True):
+    def print_wrongstuff(LineNum,Line,Comment):
+        print(' '.join([Comment,'Line',str(LineNum),Line]))
     def branch_and_process(StrictP,LineNum,Line,Comment,WrongLines):
         if StrictP:
-            print(' '.join([Comment,'Line',str(LineNum),Line]))
+            print_wrongstuff(LineNum,Line,Comment)
             return False
         else:
             WrongLines.append((LineCnt,Line,Comment,))
@@ -61,7 +63,12 @@ def file_appears_valid_p(FP,FtCnts,StrictP=True):
             if CurFtCnt not in FtCnts:
                 Comment='wrong number ('+str(CurFtCnt)+' instead of '+repr(FtCnts)+') of features'
                 branch_and_process(StrictP,LineCnt,Line,Comment,WrongLines)
-    return True
+    if StrictP:
+        return True
+    else:
+        for WrongLine in WrongLines:
+            print_wrongstuff(WrongLine[0],WrongLine[1],WrongLine[2])
+        
 
 def split_file_into_n(FP,N):
     Sents=sentence_list(FP)
