@@ -2,7 +2,6 @@ import re, imp, os
 import myModule
 imp.reload(myModule)
 
-
 # Chunk:
 # SentLine:
 
@@ -37,38 +36,52 @@ def sentence_list(FP,IncludeEOS=True):
         return open(FP,'rt').read().split('EOS')
 
 def file_appears_valid_p(FP,FtCnts,StrictP=True):
-    def print_wrongstuff(LineNum,Line,Comment):
-        print(' '.join([Comment,'Line',str(LineNum),Line]))
-    def branch_and_process(StrictP,LineNum,Line,Comment,WrongLines):
+    def print_wrongstuff(LineNum,SentCnt,Line,Comment):
+        print(' '.join(['Line',str(LineNum)+', Sent',str(SentCnt)+':',Comment,"'"+Line+"'"]))
+
+    def branch_and_process(StrictP,LineNum,Line,SentNum,Comment,WrongLines):
         if StrictP:
-            print_wrongstuff(LineNum,Line,Comment)
+            print_wrongstuff(LineNum,Line,SentNum,Comment)
             return False
         else:
-            WrongLines.append((LineCnt,Line,Comment,))
+            WrongLines.append((LineNum,Line,SentNum,Comment,))
+            return True
 
     Lines=open(FP,'rt').read().strip().split('\n')
     LineCnt=len(Lines)
     WrongLines=[]
     if not Lines[-1]=='EOS':
-        branch_and_process(StrictP,LineCnt,'','the end of file not an EOS',WrongLines)
+        if not branch_and_process(StrictP,LineCnt,'','the end of file not an EOS',WrongLines):
+            return False
+    SentCnt=0
     for Cntr,Line in enumerate(Lines):
         if Line=='EOS':
-            if Cntr+1==LineCnt:
+            SentCnt=SentCnt+1
+            if Cntr+1!=LineCnt:
                 if Lines[Cntr+1]=='EOS':
-                    branch_and_process(StrictP,LineCnt,Line,'the end of file not an EOS',WrongLines)
+                    SentCnt=SentCnt-1
+                    if not branch_and_process(StrictP,LineCnt,SentCnt,Line,'the end of file not an EOS',WrongLines):
+                        return False
+        elif Line=='':
+            if not branch_and_process(StrictP,Cntr+1,SentCnt,Line,'empty line',WrongLines):
+                return False
         else:
             if len(re.findall(r'\s',Line))>1:
-                    branch_and_process(StrictP,LineCnt,Line,'redundant whitespaces',WrongLines)
-            CurFtCnt=len(Line.split('\t')[-1].split(','))
-            if CurFtCnt not in FtCnts:
-                Comment='wrong number ('+str(CurFtCnt)+' instead of '+repr(FtCnts)+') of features'
-                branch_and_process(StrictP,LineCnt,Line,Comment,WrongLines)
+                if not branch_and_process(StrictP,Cntr+1,SentCnt,Line,'redundant whitespaces',WrongLines):
+                    return False
+            else:
+                CurFtCnt=len(Line.split('\t')[-1].split(','))
+                if CurFtCnt not in FtCnts:
+                    Comment='wrong number ('+str(CurFtCnt)+' instead of '+repr(FtCnts)+') of features'
+                    if not branch_and_process(StrictP,Cntr+1,SentCnt,Line,Comment,WrongLines):
+                        return False
     if StrictP:
         return True
     else:
         for WrongLine in WrongLines:
-            print_wrongstuff(WrongLine[0],WrongLine[1],WrongLine[2])
-        
+            print_wrongstuff(WrongLine[0],WrongLine[1],WrongLine[2],WrongLine[3])
+        print(' '.join([str(len(WrongLines)),'wrong lines','(out of',str(LineCnt)+')','detected']))
+        return WrongLines
 
 def split_file_into_n(FP,N):
     Sents=sentence_list(FP)
@@ -83,7 +96,19 @@ def split_file_into_n(FP,N):
                 if ChunkCnt==N:
                     open(FP+str(ChunkCnt),'wt').write(FSr.read())
 
-file_appears_valid_p('/Users/yosato/Dropbox/Mecab/test/kansai/corpus/corpus_train_new.mecab',[7,9])
+def remove_invalid_sents(FP):
+    WrongLines=file_appears_valid_p(FP,[7,9],StrictP=False)
+    SentNums=[ Data[1] for Data in WrongLines ]
+    Sents=sentence_list(FP)
+    with open(FP+'.removed','wt') as FSwOut:
+        with open(FP+'.remain','wt') as FSwIn:
+            for Cntr,Sent in enumerate(Sents):
+                if Cntr+1 in SentNums:
+                    FSwOut.write(Sent)
+                else:
+                    FSwIn.write(Sent)
+
+
 split_file_into_n('/Users/yosato/Dropbox/Mecab/test/kansai/corpus/corpus_train_new.mecab',4)
 
 def extract_sentences_fromsolfile(SolFileP):
