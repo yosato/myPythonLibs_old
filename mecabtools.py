@@ -35,28 +35,38 @@ def sentence_list(FP,IncludeEOS=True):
     else:
         return open(FP,'rt').read().split('EOS')
 
-def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
+def check_and_remove_errors(FP):
+    Wrongs,Corrects=filter_errors(FP,StrictP=False,Recover=True)
+    with open(FP+'.wrongs','wt') as FSwWrong:
+        for Wrong in Wrongs:
+            FSwWrong.write(stringify_wrongstuff(Wrong)+'\n')
+    open(FP+'.wrongs','wt').write('\n'.join(Corrects))
 
-    def print_wrongstuff(WrongLines):
-        for SentCnt,LineNum,Line,Comment in WrongLines:
-            print(' '.join(['Line',str(LineNum)+', Sent',str(SentCnt)+':',Comment,"'"+Line+"'"]))
-        print(' '.join([str(len(WrongLines)),'wrong lines','(out of',str(LineCnt)+')','detected']))
-
-    def something_wrong(Line,NextLine):
-        if Line=='EOS':
-            if NextLine=='EOS':
-                return 'empty sent'
-        elif Line=='':
-            return 'empty line'
+    
+def something_wrong(Line,NextLine,FtCnts):
+    if Line=='EOS':
+        if NextLine=='EOS':
+            return 'empty sent'
+    elif Line=='':
+        return 'empty line'
+    else:
+        if len(re.findall(r'\s',Line))>1:
+            return 'redundant whitespaces'
         else:
-            if len(re.findall(r'\s',Line))>1:
-                return 'redundant whitespaces'
-            else:
-                CurFtCnt=len(Line.split('\t')[-1].split(','))
-                if CurFtCnt not in FtCnts:
-                    return 'wrong num of features'
-        return None
+            CurFtCnt=len(Line.split('\t')[-1].split(','))
+            if CurFtCnt not in FtCnts:
+                return 'wrong num of features'
+    return None
 
+
+def stringify_wrongstuff(WrongLines):
+    WrongStrs=[]
+    for SentCnt,LineNum,Line,Comment in WrongLines:
+        WrongStrs.append(' '.join(['Line',str(LineNum)+', Sent',str(SentCnt)+':',Comment,"'"+Line+"'"]))
+    return '\n'.join(WrongStrs)
+
+
+def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
     Lines=open(FP,'rt').read().strip().split('\n')
     LineCnt=len(Lines)
     WrongLines=[]; CorrectLines=[]
@@ -72,16 +82,27 @@ def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
             if Cntr==0 and Line=='EOS':
                 WrongLines.append((0,Cntr+1,Line,'top/tail EOS'))
                 continue
-        try:
-            Wrong=something_wrong(Line,Next)
-        except:
-            something_wrong(Line,Next)
+        Wrong=something_wrong(Line,Next,FtCnts)
         if Line=='EOS' and Wrong!='empty sent':
             SentCnt+=1
         if Wrong:
+            if Recover:
+                if Wrong=='redundant whitespaces':
+                    (Wd,FeatsR)=re.split(r'\t+',Line)
+                    Feats=[ Ft.strip() for Ft in FeatsR.split(',') ]
+                    Attempt='\t'.join(Wd,','.join(Feats))
+                    if not something_wrong(Attempt):
+                        CorrectLines.append(Attempt)
+                    else:
+                        WrongLines.append((SentCnt,Cntr+1,Line,Wrong))
+                elif Wrong=='empty line' or 'empty sent':
+                    pass
+                else:
+                    WrongLines.append((SentCnt,Cntr+1,Line,Wrong))
+                
             WrongLines.append((SentCnt,Cntr+1,Line,Wrong))
             if StrictP:
-                print_wrongstuff(WrongLines,LineCnt)
+                print(stringify_wrongstuff(WrongLines))
                 return WrongLines,CorrectLines
         else:
             CorrectLines.append(Line)
@@ -89,7 +110,7 @@ def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
     if not WrongLines:
         print('everything looks okay')
     else:
-        print_wrongstuff(WrongLines)
+        print(stringify_wrongstuff(WrongLines))
     return WrongLines,CorrectLines
 
 def split_file_into_n(FP,N):
