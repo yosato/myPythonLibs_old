@@ -35,53 +35,62 @@ def sentence_list(FP,IncludeEOS=True):
     else:
         return open(FP,'rt').read().split('EOS')
 
-def file_appears_valid_p(FP,FtCnts,StrictP=True):
-    def print_wrongstuff(LineNum,SentCnt,Line,Comment):
-        print(' '.join(['Line',str(LineNum)+', Sent',str(SentCnt)+':',Comment,"'"+Line+"'"]))
+def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
 
-    def branch_and_process(StrictP,LineNum,Line,SentNum,Comment,WrongLines):
-        if StrictP:
-            print_wrongstuff(LineNum,Line,SentNum,Comment)
-            return False
-        else:
-            WrongLines.append((LineNum,Line,SentNum,Comment,))
-            return True
+    def print_wrongstuff(WrongLines,LineCnt):
+        for SentCnt,LineNum,Line,Comment in WrongLines:
+            print(' '.join(['Line',str(LineNum)+', Sent',str(SentCnt)+':',Comment,"'"+Line+"'"]))
+        print(' '.join([str(len(WrongLines)),'wrong lines','(out of',str(LineCnt)+')','detected']))
 
-    Lines=open(FP,'rt').read().strip().split('\n')
-    LineCnt=len(Lines)
-    WrongLines=[]
-    if not Lines[-1]=='EOS':
-        if not branch_and_process(StrictP,LineCnt,'','the end of file not an EOS',WrongLines):
-            return False
-    SentCnt=0
-    for Cntr,Line in enumerate(Lines):
+    def something_wrong(Line,NextLine):
         if Line=='EOS':
             SentCnt=SentCnt+1
-            if Cntr+1!=LineCnt:
-                if Lines[Cntr+1]=='EOS':
-                    SentCnt=SentCnt-1
-                    if not branch_and_process(StrictP,LineCnt,SentCnt,Line,'the end of file not an EOS',WrongLines):
-                        return False
+            if NextLine=='EOS':
+                return 'empty sent'
+
         elif Line=='':
-            if not branch_and_process(StrictP,Cntr+1,SentCnt,Line,'empty line',WrongLines):
-                return False
+            return 'empty line'
         else:
             if len(re.findall(r'\s',Line))>1:
-                if not branch_and_process(StrictP,Cntr+1,SentCnt,Line,'redundant whitespaces',WrongLines):
-                    return False
+                return 'redundant whitespaces'
             else:
                 CurFtCnt=len(Line.split('\t')[-1].split(','))
                 if CurFtCnt not in FtCnts:
-                    Comment='wrong number ('+str(CurFtCnt)+' instead of '+repr(FtCnts)+') of features'
-                    if not branch_and_process(StrictP,Cntr+1,SentCnt,Line,Comment,WrongLines):
-                        return False
-    if StrictP:
-        return True
+                    return 'wrong num of features'
+        return None
+
+    Lines=open(FP,'rt').read().strip().split('\n')
+    LineCnt=len(Lines)
+    WrongLines=[]; CorrectLines=[]
+        
+    SentCnt=1
+    for Cntr,Line in enumerate(Lines):
+        if Cntr+1==LineCnt:
+            Next=''
+            if Line!='EOS':
+                WrongLines.append((SentCnt,Cntr+1,Line,'top/tail EOS'))
+        else:
+            Next=Lines[Cntr+1]
+            if Cntr==0 and Line=='EOS':
+                WrongLines.append((0,Cntr+1,Line,'top/tail EOS'))
+                continue
+            
+        Wrong=something_wrong(Line,Next)
+        if Line=='EOS' and Wrong!='empty sent':
+            SentCnt+=1
+        if Wrong:
+            WrongLines.append((SentCnt,Cntr+1,Line,Wrong))
+            if StrictP:
+                print_wrongstuff(WrongLines,LineCnt)
+                return WrongLines,CorrectLines
+        else:
+            correctLines.append(Line)
+
+    if not WrongLines:
+        print('everything looks okay')
     else:
-        for WrongLine in WrongLines:
-            print_wrongstuff(WrongLine[0],WrongLine[1],WrongLine[2],WrongLine[3])
-        print(' '.join([str(len(WrongLines)),'wrong lines','(out of',str(LineCnt)+')','detected']))
-        return WrongLines
+        print_wrongstuff(WrongLines)
+    return WrongLines,CorrectLines
 
 def split_file_into_n(FP,N):
     Sents=sentence_list(FP)
@@ -96,20 +105,6 @@ def split_file_into_n(FP,N):
                 if ChunkCnt==N:
                     open(FP+str(ChunkCnt),'wt').write(FSr.read())
 
-def remove_invalid_sents(FP):
-    WrongLines=file_appears_valid_p(FP,[7,9],StrictP=False)
-    SentNums=[ Data[1] for Data in WrongLines ]
-    Sents=sentence_list(FP)
-    with open(FP+'.removed','wt') as FSwOut:
-        with open(FP+'.remain','wt') as FSwIn:
-            for Cntr,Sent in enumerate(Sents):
-                if Cntr+1 in SentNums:
-                    FSwOut.write(Sent)
-                else:
-                    FSwIn.write(Sent)
-
-
-split_file_into_n('/Users/yosato/Dropbox/Mecab/test/kansai/corpus/corpus_train_new.mecab',4)
 
 def extract_sentences_fromsolfile(SolFileP):
     Sents=extract_sentences(SolFileP)
@@ -190,5 +185,3 @@ def files_corresponding_p(FPR,FPS,Strict=True,OutputFP=None):
     return Bool
 
 
-Sents=extract_sentences_fromsolfile('/Users/yosato/kevinToEdit/Yo/solutions.b1new.mecab')
-open('/Users/yosato/kevinToEdit/Yo/sentences.b1.txt1','wt').write('\n'.join(Sents))
