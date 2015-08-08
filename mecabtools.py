@@ -37,17 +37,15 @@ def sentence_list(FP,IncludeEOS=True):
 
 def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
 
-    def print_wrongstuff(WrongLines,LineCnt):
+    def print_wrongstuff(WrongLines):
         for SentCnt,LineNum,Line,Comment in WrongLines:
             print(' '.join(['Line',str(LineNum)+', Sent',str(SentCnt)+':',Comment,"'"+Line+"'"]))
         print(' '.join([str(len(WrongLines)),'wrong lines','(out of',str(LineCnt)+')','detected']))
 
     def something_wrong(Line,NextLine):
         if Line=='EOS':
-            SentCnt=SentCnt+1
             if NextLine=='EOS':
                 return 'empty sent'
-
         elif Line=='':
             return 'empty line'
         else:
@@ -74,8 +72,10 @@ def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
             if Cntr==0 and Line=='EOS':
                 WrongLines.append((0,Cntr+1,Line,'top/tail EOS'))
                 continue
-            
-        Wrong=something_wrong(Line,Next)
+        try:
+            Wrong=something_wrong(Line,Next)
+        except:
+            something_wrong(Line,Next)
         if Line=='EOS' and Wrong!='empty sent':
             SentCnt+=1
         if Wrong:
@@ -84,7 +84,7 @@ def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
                 print_wrongstuff(WrongLines,LineCnt)
                 return WrongLines,CorrectLines
         else:
-            correctLines.append(Line)
+            CorrectLines.append(Line)
 
     if not WrongLines:
         print('everything looks okay')
