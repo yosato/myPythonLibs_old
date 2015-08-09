@@ -35,25 +35,23 @@ def sentence_list(FP,IncludeEOS=True):
     else:
         return open(FP,'rt').read().split('EOS')
 
-def check_and_remove_errors(FP):
-    Wrongs,Corrects=filter_errors(FP,StrictP=False,Recover=True)
-    with open(FP+'.wrongs','wt') as FSwWrong:
-        for Wrong in Wrongs:
-            FSwWrong.write(stringify_wrongstuff(Wrong)+'\n')
-    open(FP+'.wrongs','wt').write('\n'.join(Corrects))
+def check_and_remove_errors(FP,FtCnts):
+    Wrongs,Corrects=filter_errors(FP,FtCnts,StrictP=False,Recover=True)
+    open(FP+'.wrongs','wt').write(stringify_wrongstuff(Wrongs)+'\n')
+    open(FP+'.corrects','wt').write('\n'.join(Corrects))
 
     
 def something_wrong(LineNum,Line,NextLine,FtCnts):
-    if LineNum==1 and Line='EOS' or NextLine==None and Line!='EOS':
+    if (LineNum==1 and Line=='EOS') or (NextLine==None and Line!='EOS'):
         return 'head/tail EOS'
     elif Line=='EOS' and NextLine=='EOS':
         return 'empty sent'
-    elif Line=='':
+    elif Line.strip()=='':
         return 'empty line'
     else:
         if len(re.findall(r'\s',Line))>1:
             return 'redundant whitespaces'
-        else:
+        elif Line!='EOS':
             CurFtCnt=len(Line.split('\t')[-1].split(','))
             if CurFtCnt not in FtCnts:
                 return 'wrong num of features'
@@ -69,8 +67,8 @@ def stringify_wrongstuff(WrongLines):
 
 def get_el(List,Ind):
     try:
-        return List(Ind)
-    except OutOfIndexError:
+        return List[Ind]
+    except IndexError:
         return None
 
 def try_and_recover(Line,Wrong):
@@ -79,12 +77,12 @@ def try_and_recover(Line,Wrong):
         if len(WdFeatsR)==2:
             Wd,FeatsR=WdFeatsR
             Feats=[ Ft.strip() for Ft in FeatsR.split(',') ]
-            Attempt='\t'.join([Wd,','.join(Feats)])
+            Attempt='\t'.join([Wd.strip(),','.join(Feats)])
             return Attempt
-    elif Wrong=='empty line' or Wrong=='empty sent':
-        return ''
-    else:
+    elif Wrong=='wrong num of features':
         return None
+    else:
+        return ''
 
 
 
@@ -95,25 +93,28 @@ def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
         
     SentCnt=1
     for Cntr,Line in enumerate(Lines):
-        NextLine=get_el(Cntr+1)
+        NextLine=get_el(Lines,Cntr+1)
 
-        Wrong=something_wrong(LineNum,Line,NextLine,FtCnts)
+        Wrong=something_wrong(Cntr+1,Line,NextLine,FtCnts)
 
         if not Wrong:
             CorrectLines.append(Line)
         else:
             if Recover:
                 Attempted=try_and_recover(Line,Wrong)
-                if not something_wrong(LineNum,Line,NextLine,FtCnt):
+                if Attempted!=None and not something_wrong(Cntr+1,Attempted,NextLine,FtCnts):
                     CorrectLines.append(Attempted)
                     continue
+                elif Attempted=='':
+                    continue
+
             WrongLines.append((SentCnt,Cntr+1,Line,Wrong))
 
             if StrictP:
                 print(stringify_wrongstuff(WrongLines))
                 return WrongLines,CorrectLines
 
-        if Line=='EOS' and (Wrong!='empty sent' or NextLine==None):
+        if not (NextLine==None or Wrong=='head/tail EOS') and (Line=='EOS' and (Wrong!='empty sent' or NextLine==None)):
             SentCnt+=1
 
     if not WrongLines:
