@@ -41,12 +41,8 @@ def check_and_remove_errors(FP,FtCnts):
     open(FP+'.corrects','wt').write('\n'.join(Corrects))
 
     
-def something_wrong(LineNum,Line,NextLine,FtCnts):
-    if (LineNum==1 and Line=='EOS') or (NextLine==None and Line!='EOS'):
-        return 'head/tail EOS'
-    elif Line=='EOS' and NextLine=='EOS':
-        return 'empty sent'
-    elif Line.strip()=='':
+def something_wrong_insideline(Line,FtCnts):
+    if Line.strip()=='':
         return 'empty line'
     else:
         if len(re.findall(r'\s',Line))>1:
@@ -57,12 +53,22 @@ def something_wrong(LineNum,Line,NextLine,FtCnts):
                 return 'wrong num of features'
     return None
 
-
-def stringify_wrongstuff(WrongLines):
+def stringify_filteredsents(Sents):
     WrongStrs=[]
-    for SentCnt,LineNum,Line,Comment in WrongLines:
-        WrongStrs.append(' '.join(['Line',str(LineNum)+', Sent',str(SentCnt)+':',Comment,"'"+Line+"'"]))
-    return '\n'.join(WrongStrs)
+    CorrectStrs=[]
+    for Sent in Sents:
+        for Line in Sent:
+            if type(Line).__name__=='tuple':
+                WrongStrs.append(stringify_wrongline(Line))
+            else:
+                CorrectStrs.append(Line)
+    return WrongStrs,CorrectStrs
+
+                
+
+def stringify_wrongline(WrongLineTup):
+    SentCnt,LineNum,Line,Comment=WrongLineTup
+    return ' '.join(['Line',str(LineNum)+', Sent',str(SentCnt)+':',Comment,"'"+Line+"'"])
 
 
 def get_el(List,Ind):
@@ -84,24 +90,14 @@ def try_and_recover(Line,Wrong):
     else:
         return ''
 
-
-
-def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
-    Lines=open(FP,'rt').read().strip().split('\n')
-    LineCnt=len(Lines)
-    WrongLines=[]; CorrectLines=[]
-        
-    SentCnt=1
-    for Cntr,Line in enumerate(Lines):
-        NextLine=get_el(Lines,Cntr+1)
-
-        Wrong=something_wrong(Cntr+1,Line,NextLine,FtCnts)
-
+def filter_errors_sent(SentLines):
+    for Line in SentLines:
+        Wrong=something_wrong_insideline(Sent,FtCnts)
         if not Wrong:
-            CorrectLines.append(Line)
+            CorrectLines.append(Sent)
         else:
             if Recover:
-                Attempted=try_and_recover(Line,Wrong)
+                Attempted=try_and_recover(Sent,Wrong)
                 if Attempted!=None and not something_wrong(Cntr+1,Attempted,NextLine,FtCnts):
                     CorrectLines.append(Attempted)
                     continue
@@ -114,14 +110,24 @@ def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
                 print(stringify_wrongstuff(WrongLines))
                 return WrongLines,CorrectLines
 
-        if not (NextLine==None or Wrong=='head/tail EOS') and (Line=='EOS' and (Wrong!='empty sent' or NextLine==None)):
+
             SentCnt+=1
 
-    if not WrongLines:
-        print('everything looks okay')
-    else:
-        print(stringify_wrongstuff(WrongLines))
-    return WrongLines,CorrectLines
+
+def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
+    FSr=open(FP,'rt')
+    extract_chunk=lambda FSr: myModule.pop_chunk_from_stream(FSr,Pattern='EOS')
+
+    FilteredSents=[]; SentCnt=0
+    FSr,Sent,_,NextLine=extract_chunk(FSr)
+    while NextLine:
+        if not Sent=='':
+            SentCnt+=1
+        FilteredLinesPerSents=filter_errors_sent(Sent.split('\n'))
+        FilteredSents.append(FilteredLinesPerSents)
+        FSr,Sent,_,NxtLine=extract_chunk(FSr)
+
+    return FilteredSents
 
 def split_file_into_n(FP,N):
     Sents=sentence_list(FP)
