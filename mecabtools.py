@@ -43,10 +43,11 @@ def check_and_remove_errors(FP):
     open(FP+'.wrongs','wt').write('\n'.join(Corrects))
 
     
-def something_wrong(Line,NextLine,FtCnts):
-    if Line=='EOS':
-        if NextLine=='EOS':
-            return 'empty sent'
+def something_wrong(LineNum,Line,NextLine,FtCnts):
+    if LineNum==1 and Line='EOS' or NextLine==None and Line!='EOS':
+        return 'head/tail EOS'
+    elif Line=='EOS' and NextLine=='EOS':
+        return 'empty sent'
     elif Line=='':
         return 'empty line'
     else:
@@ -66,6 +67,27 @@ def stringify_wrongstuff(WrongLines):
     return '\n'.join(WrongStrs)
 
 
+def get_el(List,Ind):
+    try:
+        return List(Ind)
+    except OutOfIndexError:
+        return None
+
+def try_and_recover(Line,Wrong):
+    if Wrong=='redundant whitespaces':
+        WdFeatsR=re.split(r'\t+',Line.strip())
+        if len(WdFeatsR)==2:
+            Wd,FeatsR=WdFeatsR
+            Feats=[ Ft.strip() for Ft in FeatsR.split(',') ]
+            Attempt='\t'.join([Wd,','.join(Feats)])
+            return Attempt
+    elif Wrong=='empty line' or Wrong=='empty sent':
+        return ''
+    else:
+        return None
+
+
+
 def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
     Lines=open(FP,'rt').read().strip().split('\n')
     LineCnt=len(Lines)
@@ -73,39 +95,26 @@ def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
         
     SentCnt=1
     for Cntr,Line in enumerate(Lines):
-        if Cntr+1==LineCnt:
-            Next=''
-            if Line!='EOS':
-                WrongLines.append((SentCnt,Cntr+1,Line,'top/tail EOS'))
+        NextLine=get_el(Cntr+1)
+
+        Wrong=something_wrong(LineNum,Line,NextLine,FtCnts)
+
+        if not Wrong:
+            CorrectLines.append(Line)
         else:
-            Next=Lines[Cntr+1]
-            if Cntr==0 and Line=='EOS':
-                WrongLines.append((0,Cntr+1,Line,'top/tail EOS'))
-                continue
-        Wrong=something_wrong(Line,Next,FtCnts)
-        if Line=='EOS' and Wrong!='empty sent':
-            SentCnt+=1
-        if Wrong:
             if Recover:
-                if Wrong=='redundant whitespaces':
-                    (Wd,FeatsR)=re.split(r'\t+',Line)
-                    Feats=[ Ft.strip() for Ft in FeatsR.split(',') ]
-                    Attempt='\t'.join(Wd,','.join(Feats))
-                    if not something_wrong(Attempt):
-                        CorrectLines.append(Attempt)
-                    else:
-                        WrongLines.append((SentCnt,Cntr+1,Line,Wrong))
-                elif Wrong=='empty line' or 'empty sent':
-                    pass
-                else:
-                    WrongLines.append((SentCnt,Cntr+1,Line,Wrong))
-                
+                Attempted=try_and_recover(Line,Wrong)
+                if not something_wrong(LineNum,Line,NextLine,FtCnt):
+                    CorrectLines.append(Attempted)
+                    continue
             WrongLines.append((SentCnt,Cntr+1,Line,Wrong))
+
             if StrictP:
                 print(stringify_wrongstuff(WrongLines))
                 return WrongLines,CorrectLines
-        else:
-            CorrectLines.append(Line)
+
+        if Line=='EOS' and (Wrong!='empty sent' or NextLine==None):
+            SentCnt+=1
 
     if not WrongLines:
         print('everything looks okay')
