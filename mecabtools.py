@@ -35,6 +35,46 @@ def sentence_list(FP,IncludeEOS=True):
     else:
         return open(FP,'rt').read().split('EOS')
 
+
+
+
+def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
+    FSr=open(FP,'rt')
+    extract_chunk=lambda FSr: myModule.pop_chunk_from_stream(FSr,Pattern='EOS')
+
+    FilteredSents=[]; SentCnt=0
+    FSr,Sent,_,NextLine=extract_chunk(FSr)
+    while NextLine:
+        if not Sent=='':
+            SentCnt+=1
+        FilteredLinesPerSents=filter_errors_sent(Sent.split('\n'),FtCnts)
+        FilteredSents.append(FilteredLinesPerSents)
+        FSr,Sent,_,NxtLine=extract_chunk(FSr)
+
+    return FilteredSents
+
+def filter_errors_sent(SentLines,FtCnts=[7,9],Recover=False):
+    FilteredLines=[]
+    for Line in SentLines:
+        Wrong=something_wrong_insideline(Line,FtCnts)
+        if not Wrong:
+            FilteredLines.append(Line)
+        else:
+            if Recover:
+                Attempted=try_and_recover(Line,Wrong)
+                if Attempted is None:
+                    continue
+                elif not something_wrong_insideline(Attempted,FtCnts):
+                    FilteredLines.append(Attempted)
+                    continue
+
+            FilteredLines.append((Line,Wrong,))
+
+    return FilteredLines
+
+
+
+
 def check_and_remove_errors(FP,FtCnts):
     Wrongs,Corrects=filter_errors(FP,FtCnts,StrictP=False,Recover=True)
     open(FP+'.wrongs','wt').write(stringify_wrongstuff(Wrongs)+'\n')
@@ -86,48 +126,11 @@ def try_and_recover(Line,Wrong):
             Attempt='\t'.join([Wd.strip(),','.join(Feats)])
             return Attempt
     elif Wrong=='wrong num of features':
+        return Line
+    elif Wrong=='empty line':
         return None
-    else:
-        return ''
-
-def filter_errors_sent(SentLines):
-    for Line in SentLines:
-        Wrong=something_wrong_insideline(Sent,FtCnts)
-        if not Wrong:
-            CorrectLines.append(Sent)
-        else:
-            if Recover:
-                Attempted=try_and_recover(Sent,Wrong)
-                if Attempted!=None and not something_wrong(Cntr+1,Attempted,NextLine,FtCnts):
-                    CorrectLines.append(Attempted)
-                    continue
-                elif Attempted=='':
-                    continue
-
-            WrongLines.append((SentCnt,Cntr+1,Line,Wrong))
-
-            if StrictP:
-                print(stringify_wrongstuff(WrongLines))
-                return WrongLines,CorrectLines
 
 
-            SentCnt+=1
-
-
-def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
-    FSr=open(FP,'rt')
-    extract_chunk=lambda FSr: myModule.pop_chunk_from_stream(FSr,Pattern='EOS')
-
-    FilteredSents=[]; SentCnt=0
-    FSr,Sent,_,NextLine=extract_chunk(FSr)
-    while NextLine:
-        if not Sent=='':
-            SentCnt+=1
-        FilteredLinesPerSents=filter_errors_sent(Sent.split('\n'))
-        FilteredSents.append(FilteredLinesPerSents)
-        FSr,Sent,_,NxtLine=extract_chunk(FSr)
-
-    return FilteredSents
 
 def split_file_into_n(FP,N):
     Sents=sentence_list(FP)

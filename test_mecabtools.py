@@ -1,4 +1,4 @@
-import unittest,imp,os
+import unittest,imp,os,copy,re
 import mecabtools
 from pdb import set_trace
 imp.reload(mecabtools)
@@ -7,14 +7,36 @@ class TestMecabTools(unittest.TestCase):
     def setUp(self):
         self.examplefp=os.getcwd()+'/sometimeswrong.mecab'
         self.errortypes=['head/tail EOS','empty sent','empty line','redundant whitespaces','wrong num of features' ]
-        
+        set_trace()
+#        with open(self.examplefp) as FSr:
+#            WholeStr=FSr.read()
+#            self.alllines=WholeStr.split('\n')
         self.alllines=open(self.examplefp).read().split('\n')
+        self.firstsentlines=self.alllines[1:9]
+        self.firstsentwrongs=[
+            (('会い	動詞,自立,*,*,五段・ワ行促音便,連用形,*,会う,アイ,アイ',self.errortypes[-1]),('会い	動詞,自立,*,*,五段・ワ行促音便,連用形,*,会う,アイ,アイ',self.errortypes[-1])),
+            (('と	助詞,格助詞,引用,*,*,*,と,ト,ト	',self.errortypes[-2]),'と	助詞,格助詞,引用,*,*,*,と,ト,ト'),
+            (('思い 	動詞,自立,*,*,五段・ワ行促音便,連用形,思う,オモイ,オモイ',self.errortypes[-2]),'思い	動詞,自立,*,*,五段・ワ行促音便,連用形,思う,オモイ,オモイ'),
+            ((' ',self.errortypes[2]),None),
+            ]
+
+#        set_trace()
+        FstSentNoRecover=copy.copy(self.firstsentlines)
+        FstSentNoRecover[0]=self.firstsentwrongs[0][0]
+        FstSentNoRecover[2]=self.firstsentwrongs[1][0]
+        FstSentNoRecover[3]=self.firstsentwrongs[2][0]
+        FstSentNoRecover[6]=self.firstsentwrongs[3][0]
+        self.fstsentnorecover=FstSentNoRecover
+        FstSentRecover=copy.copy(self.firstsentlines)
+        FstSentRecover[0]=self.firstsentwrongs[0][0]
+        FstSentRecover[2]=self.firstsentwrongs[1][1]
+        FstSentRecover[3]=self.firstsentwrongs[2][1]
+        FstSentRecover.pop(6)
+        self.fstsentrecover=FstSentRecover
         
         self.wrongbits=[
             (1,1,'EOS',self.errortypes[0]),
-            (1,2,'会い	動詞,自立,*,*,五段・ワ行促音便,連用形,*,会う,アイ,アイ',self.errortypes[-1]),
-            (1,4,'と	助詞,格助詞,引用,*,*,*,と,ト,ト	',self.errortypes[-2]),
-            (1,5,'思い 	動詞,自立,*,*,五段・ワ行促音便,連用形,思う,オモイ,オモイ',self.errortypes[-2]),
+ 
             (2,60,'EOS',self.errortypes[1]),
             (3,62,'おそらく	一般,*,*,*,*,おそらく,オソラク,オソラク',self.errortypes[-1]),
             (3,64,' ',self.errortypes[2]),
@@ -31,45 +53,47 @@ class TestMecabTools(unittest.TestCase):
         
 #        self.corrrects=[ Line for (Cntr,Line) in enumerate(AllLines) if Cntr+1 not in WrongInds ]
 
-    def test10_something_wrong(self):
+    def test10_something_wrong_insideline(self):
         AllLines=self.alllines
- #      set_trace()
-        AllegedErrorType=mecabtools.something_wrong(1,AllLines[0],AllLines[1],[7,9])
-        self.assertEqual(AllegedErrorType,self.errortypes[0])
-
-        AllegedErrorType=mecabtools.something_wrong(2,AllLines[1],AllLines[2],[7,9])
+        AllegedErrorType=mecabtools.something_wrong_insideline(AllLines[1],[7,9])
         self.assertEqual(AllegedErrorType,self.errortypes[-1])
 
-        AllegedErrorType=mecabtools.something_wrong(4,AllLines[3],AllLines[4],[7,9])
+        AllegedErrorType=mecabtools.something_wrong_insideline(AllLines[3],[7,9])
         self.assertEqual(AllegedErrorType,self.errortypes[-2])
 
-        AllegedErrorType=mecabtools.something_wrong(60,AllLines[59],AllLines[60],[7,9])
-        self.assertEqual(AllegedErrorType,self.errortypes[1])
-
-        AllegedErrorType=mecabtools.something_wrong(64,AllLines[63],AllLines[64],[7,9])
+        AllegedErrorType=mecabtools.something_wrong_insideline(AllLines[7],[7,9])
         self.assertEqual(AllegedErrorType,self.errortypes[2])
         
+    def test15_filter_errors_sent_norecover(self):
+        #set_trace()
+        FilteredSent=mecabtools.filter_errors_sent(self.firstsentlines,[7,9],Recover=False)
+        self.assertEqual(FilteredSent,self.fstsentnorecover)
+
+    def test15_filter_errors_sent_recover(self):
+#        set_trace()
+        FilteredSent=mecabtools.filter_errors_sent(self.firstsentlines,[7,9],Recover=True)
+        self.assertEqual(FilteredSent,self.fstsentrecover)
 
     def test20_filter_errors_strict(self):
-#       set_trace()
-        AllegedWrong,AllegedCorrects=mecabtools.filter_errors(self.examplefp,[7,9],StrictP=True)
-        self.assertEqual(AllegedWrong,[self.wrongbits[0]])
-        self.assertEqual(AllegedCorrects,[])
+        set_trace()
+        AllegedFilteredSents=mecabtools.filter_errors(self.examplefp,[7,9],StrictP=True)
+        self.assertEqual(AllegedFilteredSents[0],self.fstsentnorecover)
+        
 
-    def test30_filter_errors_plain(self):
+#    def test30_filter_errors_plain(self):
 #        set_trace()
-        AllegedWrong,AllegedCorrects=mecabtools.filter_errors(self.examplefp,[7,9],StrictP=False)
-        self.assertEqual(AllegedWrong,self.wrongbits)
+#        AllegedWrong,AllegedCorrects=mecabtools.filter_errors(self.examplefp,[7,9],StrictP=False)
+#        self.assertEqual(AllegedWrong,self.wrongbits)
 #        self.assertEqual(AllegedCorrects,self.corrects)
 
-    def test40_filter_errors_recover(self):
-        #set_trace()
-        AllegedWrongs,AllegedCorrects=mecabtools.filter_errors(self.examplefp,[7,9],StrictP=False,Recover=True)
-        self.assertEqual(AllegedWrongs,[self.wrongbits[1]]+[self.wrongbits[5]])
+#    def test40_filter_errors_recover(self):
+#        #set_trace()
+#        AllegedWrongs,AllegedCorrects=mecabtools.filter_errors(self.examplefp,[7,9],StrictP=False,Recover=True)
+#        self.assertEqual(AllegedWrongs,[self.wrongbits[1]]+[self.wrongbits[5]])
 
-    def test50_check_and_remove_errors(self):
-        set_trace()
-        mecabtools.check_and_remove_errors(self.examplefp,[7,9])
+#    def test50_check_and_remove_errors(self):
+#        set_trace()
+#        mecabtools.check_and_remove_errors(self.examplefp,[7,9])
 
 
 
