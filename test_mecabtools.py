@@ -7,12 +7,14 @@ class TestMecabTools(unittest.TestCase):
     def setUp(self):
         self.examplefp=os.getcwd()+'/sometimeswrong.mecab'
         self.errortypes=['head/tail EOS','empty sent','empty line','redundant whitespaces','wrong num of features' ]
-        set_trace()
+        #set_trace()
 #        with open(self.examplefp) as FSr:
 #            WholeStr=FSr.read()
 #            self.alllines=WholeStr.split('\n')
         self.alllines=open(self.examplefp).read().split('\n')
         self.firstsentlines=self.alllines[1:9]
+        self.secondsentlines=self.alllines[10:34]
+        self.thirdsentlines=self.alllines[36:77]
         self.firstsentwrongs=[
             (('会い	動詞,自立,*,*,五段・ワ行促音便,連用形,*,会う,アイ,アイ',self.errortypes[-1]),('会い	動詞,自立,*,*,五段・ワ行促音便,連用形,*,会う,アイ,アイ',self.errortypes[-1])),
             (('と	助詞,格助詞,引用,*,*,*,と,ト,ト	',self.errortypes[-2]),'と	助詞,格助詞,引用,*,*,*,と,ト,ト'),
@@ -20,7 +22,6 @@ class TestMecabTools(unittest.TestCase):
             ((' ',self.errortypes[2]),None),
             ]
 
-#        set_trace()
         FstSentNoRecover=copy.copy(self.firstsentlines)
         FstSentNoRecover[0]=self.firstsentwrongs[0][0]
         FstSentNoRecover[2]=self.firstsentwrongs[1][0]
@@ -77,7 +78,18 @@ class TestMecabTools(unittest.TestCase):
     def test20_filter_errors_strict(self):
         set_trace()
         AllegedFilteredSents=mecabtools.filter_errors(self.examplefp,[7,9],StrictP=True)
-        self.assertEqual(AllegedFilteredSents[0],self.fstsentnorecover)
+        RealFilteredSents=[('','empty sent'),
+                           self.fstsentnorecover,
+                           self.secondsentlines,
+                           ('','empty sent'),
+                           self.thirdsentlines,
+                           ('','tail EOS absent')
+                           ]
+        self.assertEqual(len(AllegedFilteredSents),len(RealFilteredSents))
+        for ASent,RSent in zip(AllegedFilteredSents,RealFilteredSents):
+            print(ASent)
+            print(RSent)
+            self.assertEqual(ASent,RSent)
         
 
 #    def test30_filter_errors_plain(self):

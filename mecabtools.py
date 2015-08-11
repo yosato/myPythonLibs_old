@@ -38,18 +38,24 @@ def sentence_list(FP,IncludeEOS=True):
 
 
 
-def filter_errors(FP,FtCnts,StrictP=True,Recover=False):
-    FSr=open(FP,'rt')
-    extract_chunk=lambda FSr: myModule.pop_chunk_from_stream(FSr,Pattern='EOS')
+def filter_errors(FP,FtCnts,StrictP=True,Recover=False,Output=None):
+    with open(FP,'rt') as FSr:
+        extract_chunk=lambda FSr: myModule.pop_chunk_from_stream(FSr,Pattern='EOS')
 
-    FilteredSents=[]; SentCnt=0
-    FSr,Sent,_,NextLine=extract_chunk(FSr)
-    while NextLine:
-        if not Sent=='':
-            SentCnt+=1
-        FilteredLinesPerSents=filter_errors_sent(Sent.split('\n'),FtCnts)
-        FilteredSents.append(FilteredLinesPerSents)
-        FSr,Sent,_,NxtLine=extract_chunk(FSr)
+        FilteredSents=[]; SentCnt=0; NextLine=True
+        while NextLine:
+            FSr,Sent,_,NextLine=extract_chunk(FSr)
+            if Sent.strip()=='':
+                if Recover:
+                    FilteredLinesPerSent=None
+                else:
+                    FilteredLinesPerSent=(Sent,'empty sent',)
+            else:
+                SentCnt+=1
+                FilteredLinesPerSent=filter_errors_sent(Sent.strip().split('\n'),FtCnts)
+            FilteredSents.append(FilteredLinesPerSent)
+            if not NextLine and Sent[-1]!='EOS':
+                FilteredSents.append(('','tail EOS absent',))
 
     return FilteredSents
 
@@ -74,12 +80,13 @@ def filter_errors_sent(SentLines,FtCnts=[7,9],Recover=False):
 
 
 
-
 def check_and_remove_errors(FP,FtCnts):
-    Wrongs,Corrects=filter_errors(FP,FtCnts,StrictP=False,Recover=True)
-    open(FP+'.wrongs','wt').write(stringify_wrongstuff(Wrongs)+'\n')
-    open(FP+'.corrects','wt').write('\n'.join(Corrects))
-
+    if FilteredSent is None:
+        pass
+    elif any(type(Line).__name=='tuple' for Line in FilteredSent):
+        pass
+    else:
+        '\n'.join(FilteredSent)
     
 def something_wrong_insideline(Line,FtCnts):
     if Line.strip()=='':
