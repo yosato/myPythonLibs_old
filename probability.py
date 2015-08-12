@@ -104,6 +104,14 @@ class BiStats(EquivalEqual):
             self.filterrate=1
         else:
             self.filterrate=1-(len(self.sortedbistats)/self.orgbgcount)
+    def stringify_topranked_bistats(self,Thresh=100):
+        Str=''
+        pdb.set_trace()
+        for Cntr,(BG,BS) in enumerate(self.sortedbistats):
+            if Cntr>Thresh:
+                break
+            else:
+                Str=Str+'\n'+repr(BG)+'\t'+repr(BS.mis)
 
     def pick_cds_unit1_satisfies_f(self,CDs,F):
         return { Unit1:PostDist for Unit1,PostDist in CDs.items() if F(Unit1) }        
