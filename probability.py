@@ -62,6 +62,7 @@ class DiscDist(EquivalEqual):
         else:
             return False
 
+
 class BiStats(EquivalEqual):
     '''
       embracing stuff, given plural conddists, churn out various stats including
@@ -243,10 +244,14 @@ class SpecBiGram(EquivalEqual):
 
 
 
+def sents2countdic(Sents):
+    CntDic={}
+    for El in List:
+        myModule.increment_diccount(CntDic)
+    return CntDic
 
-
-
-
+def sents2sentunits(Sents):
+    return [ Sent.strip().split() for Sent in Sents ]
 
 
     

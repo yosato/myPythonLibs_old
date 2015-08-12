@@ -38,7 +38,7 @@ def sentence_list(FP,IncludeEOS=True):
 
 
 
-def filter_errors(FP,FtCnts,StrictP=True,Recover=False,Output=None):
+def filter_errors(FP,FtCnts,Recover=False,Output=None):
     with open(FP,'rt') as FSr:
         extract_chunk=lambda FSr: myModule.pop_chunk_from_stream(FSr,Pattern='EOS')
 
@@ -52,11 +52,10 @@ def filter_errors(FP,FtCnts,StrictP=True,Recover=False,Output=None):
                     FilteredLinesPerSent=(Sent,'empty sent',)
             else:
                 SentCnt+=1
-                FilteredLinesPerSent=filter_errors_sent(Sent.strip().split('\n'),FtCnts)
+                FilteredLinesPerSent=filter_errors_sent(Sent.strip().split('\n'),FtCnts,Recover=Recover)
             FilteredSents.append(FilteredLinesPerSent)
             if not NextLine and Sent[-1]!='EOS':
                 FilteredSents.append(('','tail EOS absent',))
-
     return FilteredSents
 
 def filter_errors_sent(SentLines,FtCnts=[7,9],Recover=False):
@@ -79,15 +78,6 @@ def filter_errors_sent(SentLines,FtCnts=[7,9],Recover=False):
     return FilteredLines
 
 
-
-def check_and_remove_errors(FP,FtCnts):
-    if FilteredSent is None:
-        pass
-    elif any(type(Line).__name=='tuple' for Line in FilteredSent):
-        pass
-    else:
-        '\n'.join(FilteredSent)
-    
 def something_wrong_insideline(Line,FtCnts):
     if Line.strip()=='':
         return 'empty line'
