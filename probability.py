@@ -1,4 +1,4 @@
-import imp,sys,math,copy,collections,fractions
+import imp,sys,math,copy,collections,fractions,pdb
 import myModule
 imp.reload(myModule)
 Debug=1
@@ -104,9 +104,10 @@ class BiStats(EquivalEqual):
             self.filterrate=1
         else:
             self.filterrate=1-(len(self.sortedbistats)/self.orgbgcount)
-    def stringify_topranked_bistats(self,Thresh=100):
+
+    def stringify_bistats(self,Thresh=100):
         Str=''
-        pdb.set_trace()
+#        pdb.set_trace()
         for Cntr,(BG,BS) in enumerate(self.sortedbistats):
             if Cntr>Thresh:
                 break
@@ -254,13 +255,11 @@ class SpecBiGram(EquivalEqual):
 
 def sents2countdic(Sents):
     CntDic={}
-    for El in List:
-        myModule.increment_diccount(CntDic)
+    for Sent in Sents:
+        SentUnits=Sent.strip().split()
+        for SentUnit in SentUnits:
+            myModule.increment_diccount(CntDic,SentUnit)
     return CntDic
-
-def sents2sentunits(Sents):
-    return [ Sent.strip().split() for Sent in Sents ]
-
 
     
 def rawfile2objs(RawFPWdPerLine,OutputFP=None):

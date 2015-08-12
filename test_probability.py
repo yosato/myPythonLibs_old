@@ -26,8 +26,8 @@ class TestUniBiStats(unittest.TestCase):
         self.text='\n'.join(self.sents)
         
         set_trace()
-        self.ugrams=probability.DiscDist(probability.list2countdic(count_ngrams.sents2sentunits(self.sents)))
-        self.BiStats=probability.BiStats(count_ngrams.collect_nplus1grams(self.text,Level='word'))
+        self.ugrams=probability.DiscDist(probability.sents2countdic(self.sents))
+        self.BiStats=probability.BiStats(count_ngrams.collect_nplus1grams(self.sents,self.ugrams,Level='word'))
 #        self.CDs={ Unit1:probability.DiscDist(PostDist) for Unit1,PostDist in self.CDsR.items() }
 #        self.BiStats=probability.BiStats(self.CDs)
 

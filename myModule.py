@@ -192,7 +192,7 @@ def ask_filenoexist_execute(FPs,Function,ArgsKArgs,Message='Use the old file',TO
 def dicval_sum(Dic):
     return sum(Dic.values())
 
-def increment_diccount(OrgDic,Key,Step=1,Inset=False):
+def increment_diccount(OrgDic,Key,Step=1,Inset=True):
     if not Inset:
         import copy
         Dic=copy.copy(OrgDic)
