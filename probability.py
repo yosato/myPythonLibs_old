@@ -100,6 +100,9 @@ class BiStats(EquivalEqual):
             for U2,SpecBG in PostDist.items():
                 IndBiStats[(U1,U2)]=SpecBG
         self.sortedbistats=sorted(IndBiStats.items(),key=lambda x:(x[1].nmi,x[0]),reverse=True)
+
+        self.stringify_bistats()
+        
         if self.orgbgcount==0:
             self.filterrate=1
         else:
@@ -107,12 +110,12 @@ class BiStats(EquivalEqual):
 
     def stringify_bistats(self,Thresh=100):
         Str=''
-#        pdb.set_trace()
         for Cntr,(BG,BS) in enumerate(self.sortedbistats):
             if Cntr>Thresh:
                 break
             else:
-                Str=Str+'\n'+repr(BG)+'\t'+repr(BS.mis)
+                Str=Str+'\n'+' '.join(BG[0])+' '+BG[1]+'\t'+str(BS.nmi)
+        return Str
 
     def pick_cds_unit1_satisfies_f(self,CDs,F):
         return { Unit1:PostDist for Unit1,PostDist in CDs.items() if F(Unit1) }        
@@ -138,10 +141,11 @@ class BiStats(EquivalEqual):
             
 
     def generate_filteredbigramstats(self,Criteria=[],UThresh=1):
-        print('filtering bistats, of which unit1s number '+str(len(self.conddists)))
+        Unit1Cnt=len(self.conddists)
+        print('filtering bistats, of which unit1s number '+str(Unit1Cnt))
         FBiStats={}#; RawBGs=[]
         for Cntr,(Unit1,PostDist) in enumerate(self.conddists.items()):
-            if Cntr!=0 and Cntr%2000==0: print(str(Cntr)+' unit1s done')
+            if Unit1Cnt>100000 and Cntr!=0 and Cntr%50000==0: print(str(Cntr)+' unit1s done')
             (U1PostDists,_RawBG)=self.generate_fbigramstat_perunit1(Unit1,PostDist,Criteria,UThresh=UThresh)
             if U1PostDists:
                 FBiStats[Unit1]=U1PostDists
