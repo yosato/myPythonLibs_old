@@ -200,7 +200,8 @@ class BiStats(EquivalEqual):
         Pairs=[]
         for U1,U2Dist in self.conddists.items():
             for U2 in U2Dist.evtocc.keys():
-                Pairs.append((U1,U2,))
+                U1s2=U1+(U2,)
+                Pairs.append(U1s2)
         return Pairs
 
     def bgstat_criteria_met_p(self,BGStat,Criteria,BoolOp='or'):

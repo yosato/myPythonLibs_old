@@ -259,6 +259,8 @@ def progress_counter(Milestones,ProgressConsts,Current,Unit='',Interval=2):
     if Milestones==None and SecondsPassed>50:
         print(return_stack())
         print('Progress pre-warning: '+str(SecondsPassed)+' secs passed and '+'{0:.2f}'.format(Progress)+'% done.')
+        if OrgProgress==0:
+            OrgProgress=0.0001
         DurEstimate=MinutesPassed/OrgProgress
         if DurEstimate>120:
             MilestoneUnits=200
