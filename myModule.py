@@ -125,8 +125,41 @@ def ask_filenoexist_execute_pickle(FP,Function,ArgsKArgs,Message='Use the old fi
         Pickle=load_pickle(FP)
         return Pickle
 
+def check_jsonability_level(Obj,Level):
+    JsonableAtoms=[ str, int, float ]
+    JsonableCollects=[ dict, list ]
+    IndirectlyJsonables=[ tuple, set ]
+    if any(isinstance(Obj,Atom) for Atom in JsonableAtoms):
+        return 
+    else
+    if isinstance(Obj,dict):
+        Obj=list(Obj.items())
+    if isinstance(Obj,list):
+        [  ]
+        if not all(JsonableCollects):
+        if Obj not in JsonableAtoms:
+            check_jsonability_level(Ob
+            
+    
 def ask_filenoexist_execute_json(FP,Function,ArgsKArgs,Message='Use the old file',TO=10,DefaultReuse=True,Backup=True):
-    import jsonpickle
+    import json
+    Response=ask_filenoexist_execute(FP,Function,ArgsKArgs,Message=Message,TO=TO,DefaultReuse=DefaultReuse,Backup=Backup)
+    if Response is False:
+        Json=json.loads(open(FP,'rt').read())
+        return Json
+    else:
+        JsonLevel=check_jsonability_level(Response):
+        if JsonLevel='direct':
+            ToJson=Response
+        elif JsonLevel='indirect':
+            ToJson=jsonthejsonable(Response)
+        else:
+            print('not jsonable, only returning the object')
+        open(FP,'wt').write(json.dumps(ToJson))
+        return Response
+
+ def ask_filenoexist_execute_convert_json(FP,Function,ArgsKArgs,Message='Use the old file',TO=10,DefaultReuse=True,Backup=True):
+    import json
     Response=ask_filenoexist_execute(FP,Function,ArgsKArgs,Message=Message,TO=TO,DefaultReuse=DefaultReuse,Backup=Backup)
     if Response==False:
         Json=jsonpickle.decode(open(FP,'rt').read())
