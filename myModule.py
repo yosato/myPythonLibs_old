@@ -125,22 +125,134 @@ def ask_filenoexist_execute_pickle(FP,Function,ArgsKArgs,Message='Use the old fi
         Pickle=load_pickle(FP)
         return Pickle
 
-def check_jsonability_level(Obj,Level):
-    JsonableAtoms=[ str, int, float ]
-    JsonableCollects=[ dict, list ]
-    IndirectlyJsonables=[ tuple, set ]
-    if any(isinstance(Obj,Atom) for Atom in JsonableAtoms):
-        return 
-    else
-    if isinstance(Obj,dict):
-        Obj=list(Obj.items())
-    if isinstance(Obj,list):
-        [  ]
-        if not all(JsonableCollects):
-        if Obj not in JsonableAtoms:
-            check_jsonability_level(Ob
-            
-    
+def jsonable_p(Obj,DirectP=True):
+    JsonableAtoms=[ 'str', 'int', 'float' ]
+#    JsonableCollects=[ 'dict', 'list' ]
+#    IndirectlyJsonableCollects=[ 'tuple', 'set' ]
+    if type(Obj).__name__ in JsonableAtoms:
+        return True,DirectP
+    else:
+        if isinstance(Obj,dict):
+            Obj=list(Obj.keys())+list(Obj.values())
+        elif isinstance(Obj,tuple) or isinstance(Obj,set):
+            Obj=list(Obj)
+            DirectP=False
+        if isinstance(Obj,list):
+            List=Obj
+            for El in List:
+                (ObjP,DirectP)=jsonable_p(El,DirectP)
+                if not ObjP:
+                    return False,DirectP
+            return True,DirectP
+        else:
+            return False,DirectP
+
+def diclist_halfjsonable2jsonable(DicList):
+    if isinstance(DicList,dict):
+        dic_halfjsonable2jsonable(DicList)
+    elif isinstance(DicList,list):
+        list_halfjsonable2jsonable(DicList)
+
+
+def diclist_jsonable2halfjsonable(DicListStr):
+    if isinstance(DicList,dict):
+        dic_jsonable2halfjsonable(DicList)
+    elif isinstance(DicList,list):
+        list_jsonable2halfjsonable(DicList)
+
+
+
+def dic_halfjsonable2jsonable(Dic):
+    NewItems=[]
+    for Key,Value in Dic.items():
+        if isinstance(Key,Tuple):
+            NewKey=stringify_halfjsonablecollection(Key)
+        else:
+            NewKey=Key
+        Type=type(Value).__name__
+        if Type=='list' or Type=='dict':
+            NewVal=diclist_halfjsonable2jsonable(Value)
+        elif Type=='tuple':
+            stringify_halfjsonablecollection(Value)
+        else:
+            NewVal=Val
+        NewItems.append(NewKey,NewVal)
+    return {}.update(NewItems)
+
+def dic_jsonable2halfjsonable(Dic):
+    NewItems=[]
+    for Key,Value in Dic.items():
+        if isinstance(Key,Tuple):
+            NewKey=destringify_halfjsonablecollection(Key)
+        else:
+            NewKey=Key
+        Type=type(Value).__name__
+        if Type=='list' or Type=='dict':
+            NewVal=diclist_jsonable2halfjsonable(Value)
+        elif Type=='tuple':
+            destringify_halfjsonablecollection(Value)
+        else:
+            NewVal=Val
+        NewItems.append(NewKey,NewVal)
+    return {}.update(NewItems)
+
+
+def list_halfjsonable2jsonable(L):
+    NewL=[]
+    for El in L:
+        Type=type(Value).__name__
+        if Type=='list' or Type=='dict':
+            NewL.append(diclist_halfjsonable2jsonable(El))
+        elif Type=='tuple':
+            NewL.append(stringify_halfjsonablecollection(El))
+        else:
+            NewL.append(El)
+
+    return NewL
+
+def list_jsonable2halfjsonable(L):
+    NewL=[]
+    for El in L:
+        Type=type(Value).__name__
+        if Type=='list' or Type=='dict':
+            NewL.append(diclist_jsonable2halfjsonable(El))
+        elif Type=='tuple':
+            NewL.append(destringify_halfjsonablecollection(El))
+        else:
+            NewL.append(El)
+
+    return NewL
+
+
+def stringify_halfjsonablecollection(HalfJsonable):
+    Els=[]
+    for El in HalfJsonable:
+        if isinstance(El,str):
+            Els.append(El)
+        else:
+            Els.append(type(El).__name__+'|;|'+str(El))
+
+    return type(HalfJsonable).__name__+'|;|'+'|-|'.join(Els)
+
+def destringify_halfjsonablecollection(StringifiedTuple):
+    Type,StEls=StringifiedTuple.split('|:|')[0]
+    Els=[]
+    for StEl in StEls.split('|-|'):
+        if '/=/' in StEl:
+            Type,St=StEl.split('|-|')
+            if Type=='int':
+                Els.append(int(St))
+            elif Type=='float':
+                Els.append(float(St))
+        else:
+            Els.append(StEl)
+    if Type=='set':
+        return set(Els)
+    elif Type=='tuple':
+        return tuple(Els)
+
+
+
 def ask_filenoexist_execute_json(FP,Function,ArgsKArgs,Message='Use the old file',TO=10,DefaultReuse=True,Backup=True):
     import json
     Response=ask_filenoexist_execute(FP,Function,ArgsKArgs,Message=Message,TO=TO,DefaultReuse=DefaultReuse,Backup=Backup)
@@ -148,25 +260,19 @@ def ask_filenoexist_execute_json(FP,Function,ArgsKArgs,Message='Use the old file
         Json=json.loads(open(FP,'rt').read())
         return Json
     else:
-        JsonLevel=check_jsonability_level(Response):
-        if JsonLevel='direct':
-            ToJson=Response
-        elif JsonLevel='indirect':
-            ToJson=jsonthejsonable(Response)
-        else:
+        (Bool,Level)=jsonable_p_level(Response)
+        if not Bool:
             print('not jsonable, only returning the object')
+        elif Level=='direct':
+            ToJson=Response
+        elif Level=='indirect':
+            ToJson=jsonthejsonable(Response)
         open(FP,'wt').write(json.dumps(ToJson))
         return Response
 
- def ask_filenoexist_execute_convert_json(FP,Function,ArgsKArgs,Message='Use the old file',TO=10,DefaultReuse=True,Backup=True):
-    import json
-    Response=ask_filenoexist_execute(FP,Function,ArgsKArgs,Message=Message,TO=TO,DefaultReuse=DefaultReuse,Backup=Backup)
-    if Response==False:
-        Json=jsonpickle.decode(open(FP,'rt').read())
-        return Json
-    else:
-        open(FP,'wt').write(jsonpickle.encode(Response))
-        return Response
+def jsonthejsonable(Jsonable):
+    pass
+
     
     
 class JsonManip:
