@@ -63,7 +63,7 @@ class DiscDist(EquivalEqual):
             return False
 
 
-class BiStats(EquivalEqual):
+class NPlus1GramStats(EquivalEqual):
     '''
       embracing stuff, given plural conddists, churn out various stats including
       joint probabilities, mutual information and pointwise counterpart
@@ -78,36 +78,37 @@ class BiStats(EquivalEqual):
         Items=self.rawconddists.items()
         if Items:
             self.n=len(list(Items)[0][0])+1
-        else:
-            self.n=0
         self.corpus_id=CorpusID
         self.conddists={ U1:DiscDist(PostDist) for U1,PostDist in Items }
-        self.orgbgcount=sum(PostDist.totalocc for PostDist in self.conddists.values())
+        self.orgbgtokencount=sum(PostDist.totalocc for PostDist in self.conddists.values())
+        self.orgbgtypecount=sum( len(Value) for Value in self.rawconddists.values() )
         self.eossym='eos%'
         self.bossym='%bos'
         if SentCnt:
             self.sentcnt=SentCnt
         else:
             self.sentcnt=self.sum_allpostdists(self.pick_cds_unit1_satisfies_f(self.conddists,(lambda X: self.bossym in X)))
+        self.u1grams=self.find_u1grams()
+
         if U2Grams:
             self.u2grams=U2Grams
         else:
             self.u2grams=self.find_u2grams()
-        self.u1grams=self.find_u1grams()
+
         BSs,BGs=self.generate_filteredbigramstats(Criteria=Criteria,UThresh=UThresh)
         self.filteredbistats=BSs
         self.filteredbgs=BGs
-        IndBiStats={}
+        IndNGramStats={}
         for U1,PostDist in self.filteredbistats.items():
             for U2,SpecBG in PostDist.items():
-                IndBiStats[(U1,U2)]=SpecBG
-        self.sortedbistats=sorted(IndBiStats.items(),key=lambda x:(x[1].nmi,x[0]),reverse=True)
+                IndNGramStats[(U1,U2)]=SpecBG
+        self.sortedbistats=sorted(IndNGramStats.items(),key=lambda x:(x[1].nmi,x[0]),reverse=True)
 
         
-        if self.orgbgcount==0:
+        if self.orgbgtypecount==0:
             self.filterrate=1
         else:
-            self.filterrate=1-(len(self.sortedbistats)/self.orgbgcount)
+            self.filterrate=1-(len(self.sortedbistats)/self.orgbgtypecount)
 
     def stringify_bistats(self,Thresh=100):
         Str=''
@@ -144,14 +145,14 @@ class BiStats(EquivalEqual):
     def generate_filteredbigramstats(self,Criteria=[],UThresh=1):
         Unit1Cnt=len(self.conddists)
         print('filtering bistats, of which unit1s number '+str(Unit1Cnt))
-        FBiStats={}; RawBGs=[]
+        FNGramStats={}; RawBGs=[]
         for Cntr,(Unit1,PostDist) in enumerate(self.conddists.items()):
             if Unit1Cnt>100000 and Cntr!=0 and Cntr%50000==0: print(str(Cntr)+' unit1s done')
             (U1PostDists,RawBG)=self.generate_fbigramstat_perunit1(Unit1,PostDist,Criteria,UThresh=UThresh)
             if U1PostDists:
-                FBiStats[Unit1]=U1PostDists
+                FNGramStats[Unit1]=U1PostDists
                 RawBGs.extend(RawBG)
-        return FBiStats,RawBGs
+        return FNGramStats,RawBGs
 
     # this is for one conddist. that is only one unit1, which can be a compound, plus postdist of singleton unit2s
     def generate_fbigramstat_perunit1(self,Unit1,PostDist,Criteria=[],UThresh=1):
@@ -177,11 +178,11 @@ class BiStats(EquivalEqual):
         BiNowUni={}; TriNowBis=[]
         # first you need (u1,u2) figures
         PostDist={}
-        for Wd1,BiStats in self.filteredbistats.items():
-            if not BiStats:
+        for Wd1,NGramStats in self.filteredbistats.items():
+            if not NGramStats:
                 Wd12Occ=0
             else:
-                for Wd2,Wd12Stat in BiStats.items():
+                for Wd2,Wd12Stat in NGramStats.items():
 #                    PostDist[Wd12Stat.unit2]=Wd12Stat.unit2condocc
                     Wd12Occ=Wd12Stat.unit2condvarocc
   #          generate_bigramstat_p
@@ -194,7 +195,7 @@ class BiStats(EquivalEqual):
             #            TriNowBi=BiGram((Wd1,Wd2,),Wd12Stat.Wd3,)
               #          TriNowBis.append(TriNowBi)
         #BiNowUni=DiscDist(BiNowUni)
-        #Hi=UniBiStats(TriNowBis,BiNowUni)
+        #Hi=UniNGramStats(TriNowBis,BiNowUni)
         return BiNowUni,TriNowBis
 
     def get_raw_pairs(self):
@@ -245,7 +246,7 @@ class SpecBiGram(EquivalEqual):
         self.mis=all_mis(self.unit1prob,Unit2Stats[2],self.jointprob)
         self.nmi=self.mis[1][1]
 
-        #BiStatsPerUnit1[Wd2]=BiStat(Wd1Prob,Wd2Prob,PostDist,Joint,MIs)
+        #NGramStatsPerUnit1[Wd2]=BiStat(Wd1Prob,Wd2Prob,PostDist,Joint,MIs)
 
     def render_raw(self,OccOrProb='occ'):
         if OccOrProb=='prob':
