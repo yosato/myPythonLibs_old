@@ -49,52 +49,56 @@ def jsonable_p(Obj,DirectP=True):
 
 def jsonify_diclist(DicList):
     if isinstance(DicList,dict):
-        jsonify_dic(DicList)
+        return jsonify_dic(DicList)
     elif isinstance(DicList,list):
-        jsonify_list(DicList)
+        return jsonify_list(DicList)
 
 
-def dejsonify_diclist(DicListStr):
+def dejsonify_diclist(DicList):
     if isinstance(DicList,dict):
-        dejsonify_dic(DicList)
+        return dejsonify_dic(DicList)
     elif isinstance(DicList,list):
-        dejsonify_list(DicList)
+        return dejsonify_list(DicList)
 
 
 
 def jsonify_dic(Dic):
     NewItems=[]
     for Key,Value in Dic.items():
-        if isinstance(Key,Tuple):
-            NewKey=stringify_halfjsonablecollection(Key)
+        if isinstance(Key,tuple):
+            NewKey=stringify_halfjsonable(Key)
         else:
             NewKey=Key
         Type=type(Value).__name__
         if Type=='list' or Type=='dict':
-            NewVal=diclist_halfjsonable2jsonable(Value)
+            NewVal=jsonify_diclist(Value)
         elif Type=='tuple':
-            stringify_halfjsonable(Value)
+            NewVal=stringify_halfjsonable(Value)
         else:
-            NewVal=Val
-        NewItems.append(NewKey,NewVal)
-    return {}.update(NewItems)
+            NewVal=Value
+        NewItems.append((NewKey,NewVal,))
+    Dict={}
+    Dict.update(NewItems)
+    return Dict
 
 def dejsonify_dic(Dic):
     NewItems=[]
     for Key,Value in Dic.items():
-        if isinstance(Key,Tuple):
+        if Key.startswith('tuple|:|'):
             NewKey=destringify_halfjsonable(Key)
         else:
             NewKey=Key
         Type=type(Value).__name__
         if Type=='list' or Type=='dict':
-            NewVal=diclist_jsonable2halfjsonable(Value)
-        elif Type=='tuple':
-            destringify_halfjsonable(Value)
+            NewVal=dejsonify_diclist(Value)
+        elif Type=='str' and (Value.startswith('tuple|:|') or Value.startswith('set|:|')):
+            NewVal=destringify_halfjsonable(Value)
         else:
-            NewVal=Val
-        NewItems.append(NewKey,NewVal)
-    return {}.update(NewItems)
+            NewVal=Value
+        NewItems.append((NewKey,NewVal,))
+    Dict={}
+    Dict.update(NewItems)
+    return Dict
 
 
 def jsonify_list(L):
@@ -132,10 +136,10 @@ def stringify_halfjsonable(HalfJsonable):
         else:
             Els.append(type(El).__name__+'|;|'+str(El))
 
-    return type(HalfJsonable).__name__+'|;|'+'|-|'.join(Els)
+    return type(HalfJsonable).__name__+'|:|'+'|-|'.join(Els)
 
 def destringify_halfjsonable(StringifiedTuple):
-    Type,StEls=StringifiedTuple.split('|:|')[0]
+    Type,StEls=StringifiedTuple.split('|:|')
     Els=[]
     for StEl in StEls.split('|-|'):
         if '/=/' in StEl:

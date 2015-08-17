@@ -68,7 +68,7 @@ class BiStats(EquivalEqual):
       embracing stuff, given plural conddists, churn out various stats including
       joint probabilities, mutual information and pointwise counterpart
     '''
-    def __init__(self,CDsR,Criteria=[],U2Grams=[],SentCnt=None,UThresh=1):
+    def __init__(self,CDsR,CorpusID=None,Criteria=[],U2Grams=[],SentCnt=None,UThresh=1):
         # for conddists, we accept the raw dict or DiscDist for postdists, and keep them both for different attributes.
         # special case for unigrams
         if CDsR and type(list(CDsR.values())[0]).__name__=='int':
@@ -80,6 +80,7 @@ class BiStats(EquivalEqual):
             self.n=len(list(Items)[0][0])+1
         else:
             self.n=0
+        self.corpus_id=CorpusID
         self.conddists={ U1:DiscDist(PostDist) for U1,PostDist in Items }
         self.orgbgcount=sum(PostDist.totalocc for PostDist in self.conddists.values())
         self.eossym='eos%'
@@ -93,15 +94,15 @@ class BiStats(EquivalEqual):
         else:
             self.u2grams=self.find_u2grams()
         self.u1grams=self.find_u1grams()
-
-        self.filteredbistats=self.generate_filteredbigramstats(Criteria=Criteria,UThresh=UThresh)
+        BSs,BGs=self.generate_filteredbigramstats(Criteria=Criteria,UThresh=UThresh)
+        self.filteredbistats=BSs
+        self.filteredbgs=BGs
         IndBiStats={}
         for U1,PostDist in self.filteredbistats.items():
             for U2,SpecBG in PostDist.items():
                 IndBiStats[(U1,U2)]=SpecBG
         self.sortedbistats=sorted(IndBiStats.items(),key=lambda x:(x[1].nmi,x[0]),reverse=True)
 
-        self.stringify_bistats()
         
         if self.orgbgcount==0:
             self.filterrate=1
@@ -143,14 +144,14 @@ class BiStats(EquivalEqual):
     def generate_filteredbigramstats(self,Criteria=[],UThresh=1):
         Unit1Cnt=len(self.conddists)
         print('filtering bistats, of which unit1s number '+str(Unit1Cnt))
-        FBiStats={}#; RawBGs=[]
+        FBiStats={}; RawBGs=[]
         for Cntr,(Unit1,PostDist) in enumerate(self.conddists.items()):
             if Unit1Cnt>100000 and Cntr!=0 and Cntr%50000==0: print(str(Cntr)+' unit1s done')
-            (U1PostDists,_RawBG)=self.generate_fbigramstat_perunit1(Unit1,PostDist,Criteria,UThresh=UThresh)
+            (U1PostDists,RawBG)=self.generate_fbigramstat_perunit1(Unit1,PostDist,Criteria,UThresh=UThresh)
             if U1PostDists:
                 FBiStats[Unit1]=U1PostDists
-                #RawBGs.extend(RawBG)
-        return FBiStats#,RawBGs
+                RawBGs.extend(RawBG)
+        return FBiStats,RawBGs
 
     # this is for one conddist. that is only one unit1, which can be a compound, plus postdist of singleton unit2s
     def generate_fbigramstat_perunit1(self,Unit1,PostDist,Criteria=[],UThresh=1):

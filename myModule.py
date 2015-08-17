@@ -258,43 +258,19 @@ def ask_filenoexist_execute_json(FP,Function,ArgsKArgs,Message='Use the old file
     Response=ask_filenoexist_execute(FP,Function,ArgsKArgs,Message=Message,TO=TO,DefaultReuse=DefaultReuse,Backup=Backup)
     if Response is False:
         Json=json.loads(open(FP,'rt').read())
-        return Json
+        Object=dejsonify_diclist(Json)
+        return Object
     else:
-        (Bool,Level)=jsonable_p_level(Response)
+        (Bool,DirectP)=jsonable_p(Response)
         if not Bool:
             print('not jsonable, only returning the object')
-        elif Level=='direct':
+        elif DirectP:
             ToJson=Response
-        elif Level=='indirect':
-            ToJson=jsonthejsonable(Response)
+        else:
+            ToJson=jsonify_diclist(Response)
         open(FP,'wt').write(json.dumps(ToJson))
         return Response
 
-def jsonthejsonable(Jsonable):
-    pass
-
-    
-    
-class JsonManip:
-    def __init__(self,FP,Stuff):
-        import json
-        if FP.endswith('.json'):
-            FP=FP+'.json'
-        self.fp=FP
-        self.stuff=Stuff
-    def serialise_stuff_if_nec(self,Stuff):
-        return Stuff.__dict__
-    def dump_json(self):
-        with open(FP,'wt') as FSw:
-            try:
-                json.dump(self.stuff,FSw)
-            except TypeError:
-                json.dump(self.serialise_stuff_if_nec(self.stuff))
-            
-    def load_json(self):
-        return json.load(FP)
-        
-        
 def ask_filenoexist_execute(FPs,Function,ArgsKArgs,Message='Use the old file',TO=10,DefaultReuse=True,Backup=True):
     if type(FPs).__name__=='str':
         FPs=[FPs]
