@@ -32,6 +32,9 @@ def stdev(Stats):
     Var=variance(Stats)
     return math.sqrt(Var/len(Stats))
 
+def stddev(Stats):
+    return stdev(Stats)
+
 def harmonic_mean(OrgNums):
     Nums=copy.copy(OrgNums)
     Sum=0
