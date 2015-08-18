@@ -839,7 +839,7 @@ def xor(Bool1,Bool2):
     return (Bool1 or Bool2) and not (Bool1 and Bool2)
 
 def chunk_list(List,ChunkSize,ChunkCnt=None,Overlap=0):
-    Chunks=[]; StartInd=0
+    Chunks=[]
     ListLen=len(List)
     Conds=[ xor(ChunkSize,ChunkCnt)]
     if not all(Conds):
@@ -847,10 +847,11 @@ def chunk_list(List,ChunkSize,ChunkCnt=None,Overlap=0):
     if ChunkCnt:
         ChunkSize=ListLen//ChunkCnt
     else:
-        while StartInd < ListLen-1:
-            EndInd=StartInd+ChunkSize
-            Chunks.append(List[StartInd:EndInd])
-            StartInd=StartInd+ChunkSize-Overlap
+        ChStartInd=0; ChEndInd=ChunkSize
+        while ChEndInd <= ListLen:
+            Chunks.append(List[ChStartInd:ChEndInd])
+            ChStartInd=ChStartInd+ChunkSize-Overlap
+            ChEndInd=ChStartInd+ChunkSize
     return Chunks
 
 def chunk(L,N,O=0): 

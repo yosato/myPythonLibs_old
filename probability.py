@@ -68,7 +68,7 @@ class NPlus1GramStats(EquivalEqual):
       embracing stuff, given plural conddists, churn out various stats including
       joint probabilities, mutual information and pointwise counterpart
     '''
-    def __init__(self,CDsR,CorpusID=None,Criteria=[],U2Grams=[],SentCnt=None,UThresh=1):
+    def __init__(self,CDsR,CorpusID=None,Criteria=[],U2Grams=[],SentCnt=None,UThresh=0):
         # for conddists, we accept the raw dict or DiscDist for postdists, and keep them both for different attributes.
         # special case for unigrams
         if CDsR and type(list(CDsR.values())[0]).__name__=='int':
