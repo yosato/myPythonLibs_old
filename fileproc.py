@@ -1,7 +1,7 @@
 import sys,os,imp,re,subprocess,json
-import myModule
+#import myModule
 
-imp.reload(myModule)
+#imp.reload(myModule)
 
 class JsonManip:
     def __init__(self,FP,Stuff):
