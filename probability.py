@@ -68,9 +68,11 @@ class NPlus1GramStats(EquivalEqual):
       embracing stuff, given plural conddists, churn out various stats including
       joint probabilities, mutual information and pointwise counterpart
     '''
-    def __init__(self,CDsR,CorpusID=None,Criteria=[],U2Grams=[],SentCnt=None,UThresh=0):
+    def __init__(self,CDsR2,CorpusID=None,Criteria=[],U2Grams=[],SentCnt=None,UThresh=0):
         # for conddists, we accept the raw dict or DiscDist for postdists, and keep them both for different attributes.
         # special case for unigrams
+        # CDsR should contain a meta value for the occurrence of items to be ignored (for correct computation of Ngrams)
+        CDsR,Meta=CDsR2
         if CDsR and type(list(CDsR.values())[0]).__name__=='int':
             self.rawconddists={ ():{U1:PD} for (U1,PD) in CDsR.items() }
         else:
@@ -79,7 +81,7 @@ class NPlus1GramStats(EquivalEqual):
         if Items:
             self.n=len(list(Items)[0][0])+1
         self.corpus_id=CorpusID
-        self.conddists={ U1:DiscDist(PostDist) for U1,PostDist in Items }
+        self.conddists={ U1:DiscDist(PostDist) for (U1,PostDist) in Items }
         self.orgbgtokencount=sum(PostDist.totalocc for PostDist in self.conddists.values())
         self.orgbgtypecount=sum( len(Value) for Value in self.rawconddists.values() )
         self.eossym='eos%'
