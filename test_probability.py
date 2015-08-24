@@ -24,35 +24,26 @@ class TestUniBiStats(unittest.TestCase):
                      'w2 w1 w5' ]
         
         self.text='\n'.join(self.sents)
-        
+        UniGrams=count_ngrams.collect_nplus1grams(self.sents,None)
+        self.unistats=probability.NPlus1GramStats(UniGrams)
+        BiGrams=count_ngrams.collect_nplus1grams(self.sents,self.unistats)
+        self.bistats_nofilter=probability.NPlus1GramStats(BiGrams)
         set_trace()
-        self.ugrams=probability.DiscDist(probability.sents2countdic(self.sents))
-        self.BiStats=probability.BiStats(count_ngrams.collect_nplus1grams(self.sents,self.ugrams,Level='word'))
-#        self.CDs={ Unit1:probability.DiscDist(PostDist) for Unit1,PostDist in self.CDsR.items() }
-#        self.BiStats=probability.BiStats(self.CDs)
-
+        self.bistats_filtered=probability.NPlus1GramStats(BiGrams,Threshs=([('nmi',0.2)],1))
 
     def test10_ugram_loop(self):
-        UG1,UG2=self.BiStats.ugram_loop()
+#        set_trace()
+        UG1=self.bistats_nofilter.find_u1grams()
+        UG2=self.bistats_nofilter.find_u2grams()
         ExpectedUG1={('%bos',):8,('w1',):9,('w2',):8,('w3',):2,('w4',):2,('w5',):3}
         ExpectedUG2={'w1':9,'w2':8,'w3':2,'w4':2,'w5':3,'eos%':8}
         self.assertDictEqual(UG1.evtocc,ExpectedUG1)
         self.assertDictEqual(UG2.evtocc,ExpectedUG2)
 
-    def test15_stringify_bistats(self):
-        set_trace()
-        ExpectedStr=''
-        AllegedStr=self.BiStats.stringify_bistats()
-        self.assertEqual(ExpectedStr,AllegedStr)
-        
-
-    def test02_generate_bigramstat_perunit1(self):
-        
-
-        BGsForWd1=self.BiStats.generate_bigramstat_perunit1(('w1',),self.BiStats.conddists[('w1',)])
-        AllegedBGForWd1={ ( #BG.unit1, BG.unit1occ, #BG.unit1prob, 
-                                           BG.unit2, BG.unit2condocc, #BG.unit2prob,
-                                         BG.jointprob)  for BG in BGsForWd1.values() }
+    def test20_generate_fbigramstat_perunit1_nofilter(self):
+        BGsForWd1=self.bistats_nofilter.generate_fbigramstat_perunit1(('w1',),self.bistats_nofilter.conddists[('w1',)])
+                                                                      
+        AllegedBGForWd1={ ( BG.unit2, BG.unit2condocc, BG.jointprob) for BG in BGsForWd1[0].values() }
         self.assertEqual(len(AllegedBGForWd1),5)
         RealBGForWd1={ ('w1', 1, fractions.Fraction(1,32)),
                        ('w2', 4, fractions.Fraction(4,32)), 
@@ -62,11 +53,10 @@ class TestUniBiStats(unittest.TestCase):
                                       }
         self.assertEqual(AllegedBGForWd1,RealBGForWd1)
 
-    def test03_generate_bigramstat_perunit1_filtering(self):
-        BGsForWd1Filtered=self.BiStats.generate_bigramstat_perunit1('w1',self.BiStats.conddists['w1'],Criteria=[('nmi',0.2)])
-        AllegedBGForWd1Filtered={ ( #BG.unit1, BG.unit1occ, #BG.unit1prob, 
-                                           BG.unit2, BG.unit2condocc, #BG.unit2prob,
-                                         BG.jointprob)  for BG in BGsForWd1Filtered.values() }
+    def test22_generate_bigramstat_perunit1_filter(self):
+        set_trace()
+        BGsForWd1Filtered=self.bistats_filtered.generate_fbigramstat_perunit1(('w1',),self.bistats_filtered.conddists[('w1',)])
+        AllegedBGForWd1Filtered={ ( BG.unit2, BG.unit2condocc, BG.jointprob)  for BG in BGsForWd1Filtered[0].values() }
         self.assertEqual(len(AllegedBGForWd1Filtered),2)
         RealBGForWd1Filtered={ #('w1', 1, fractions.Fraction(1,32)),
                        ('w2', 4, fractions.Fraction(4,32)), 

@@ -104,7 +104,7 @@ def dejsonify_dic(Dic):
 def jsonify_list(L):
     NewL=[]
     for El in L:
-        Type=type(Value).__name__
+        Type=type(El).__name__
         if Type=='list' or Type=='dict':
             NewL.append(jsonify_diclist(El))
         elif Type=='tuple':
