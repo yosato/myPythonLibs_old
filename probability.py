@@ -69,22 +69,32 @@ class NPlus1GramStats(EquivalEqual):
       embracing stuff, given plural conddists, churn out various stats including
       joint probabilities, mutual information and pointwise counterpart
     '''
-    def __init__(self,CDsR2,CorpusID=None,Threshs=([],0),U2Grams=[],SentCnt=None):
+    def __init__(self,CDsRClosed,U1Tails=None,U2Grams=None,CorpusID=None,Threshs=([],0),SentCnt=None):
         # for conddists, we accept the raw dict or DiscDist for postdists, and keep them both for different attributes.
         # special case for unigrams
         # CDsR should contain a meta value for the occurrence of items to be ignored (for correct computation of Ngrams)
-        CDsR,Meta=CDsR2
-        if CDsR and type(list(CDsR.values())[0]).__name__=='int':
-            self.rawconddists={ ():{U1:PD} for (U1,PD) in CDsR.items() }
+        if CDsRClosed and type(list(CDsRClosed.values())[0]).__name__=='int':
+            CDsR={ ():{U1:PD} for (U1,PD) in CDsRClosed.items() }
         else:
-            self.rawconddists={ ((U1,) if type(U1).__name__=='str' else U1):PD for (U1,PD) in CDsR.items() }
-        Items=self.rawconddists.items()
-        if Items:
-            self.n=len(list(Items)[0][0])+1
+            CDsR={ ((U1,) if type(U1).__name__=='str' else U1):PD for (U1,PD) in CDsRClosed.items() }
+
+        if U2Grams:
+            self.u2grams=U2Grams
+        else:
+            self.u2grams=self.find_u2grams({ U1:DiscDist(PostDist) for (U1,PostDist) in CDsR.items() })
+        self.plus1n=self.check_length(CDsR)+1
+
+        if U1Tails:
+            OthersFakeSeq=tuple([ '' for _i in range(self.startn) ])
+            CDsR[OthersFakeSeq]=self.u2grams
+
+        self.rawconddists=CDsR
+        self.conddists={ U1:DiscDist(PostDist) for (U1,PostDist) in CDsR.items() }
+
         self.corpus_id=CorpusID
-        self.conddists={ U1:DiscDist(PostDist) for (U1,PostDist) in Items }
-        self.orgbgtokencount=sum(PostDist.totalocc for PostDist in self.conddists.values())+Meta
-        self.orgbgtypecount=sum( len(Value) for Value in self.rawconddists.values() )+Meta
+        
+        self.orgbgtokencount=sum(PostDist.totalocc for PostDist in self.conddists.values())
+        self.orgbgtypecount=sum( len(Value) for Value in self.rawconddists.values() )
         self.eossym='eos%'
         self.bossym='%bos'
         if SentCnt:
@@ -93,32 +103,18 @@ class NPlus1GramStats(EquivalEqual):
             self.sentcnt=self.sum_allpostdists(self.pick_cds_unit1_satisfies_f(self.conddists,(lambda X: self.bossym in X)))
         self.u1grams=self.find_u1grams()
 
-        if U2Grams:
-            self.u2grams=U2Grams
-        else:
-            self.u2grams=self.find_u2grams()
+
 
         self.uthresh=Threshs[1]
         self.bithreshs=Threshs[0]
         
-        BSs,BGs,FilteredBGs=self.generate_filteredbigramstats()
-        self.remainbistats=BSs
-        self.remainbgs=BGs
-        self.filteredbgs=FilteredBGs
-        self.filteredcounts=(len(self.filteredbgs.keys()),sum(self.filteredbgs.values()))
-        IndNGramStats={}
-        for U1,PostDist in self.remainbistats.items():
-            for U2,SpecBG in PostDist.items():
-                IndNGramStats[(U1,U2)]=SpecBG
-        self.sortedbistats=sorted(IndNGramStats.items(),key=lambda x:(x[1].nmi,x[0]),reverse=True)
-
-        
-        if self.orgbgtypecount==0:
-            self.typefilterrate=1
-            self.tokenfilterrate=1
+   
+    def check_length(self,CDsR):
+        FstElLen=len(list(CDsR.keys())[0])
+        if not all(len(U1) == FstElLen for U1 in CDsR.keys()):
+            sys.exit('inconsistent length of ngram')
         else:
-            self.typefilterrate=self.filteredcounts[0]/self.orgbgtypecount
-            self.tokenfilterrate=self.filteredcounts[1]/self.orgbgtokencount
+            return FstElLen
 
     def stringify_bistats(self,Thresh=100):
         Str=''
@@ -144,15 +140,15 @@ class NPlus1GramStats(EquivalEqual):
             myModule.increment_diccount(U1Raw,Unit1,Step=Unit2Dist.totalocc,Inset=True)
         return DiscDist(U1Raw)
 
-    def find_u2grams(self):
+    def find_u2grams(self,CondDists):
         Unit2Occs={}
-        for Unit2Dist in self.conddists.values():
+        for Unit2Dist in CondDists.values():
             for Unit2,Occ in Unit2Dist.evtocc.items():
                 myModule.increment_diccount(Unit2Occs,Unit2,Step=Occ,Inset=True)
         return DiscDist(Unit2Occs)
             
 
-    def generate_filteredbigramstats(self):
+    def generate_filteredstats(self):
         Unit1Cnt=len(self.conddists)
         print('filtering bistats, of which unit1s number '+str(Unit1Cnt))
         FNGramStats={}; RawBGs=[]; CumFilteredCnts=defaultdict(int)
@@ -165,7 +161,27 @@ class NPlus1GramStats(EquivalEqual):
                 FNGramStats[Unit1]=U1PostDists
                 RawBGs.extend(RawBG)
 
-        return FNGramStats,RawBGs,CumFilteredCnts
+        self.remainbistats=FNGramStats
+        self.remainbgs=RawBGs
+        self.filteredbgs=CumFilteredCnts
+        self.filteredbgs_fornext={ BG:Cnt for (BG,Cnt) in self.filteredbgs.items() if self.eossym not in BG }
+        
+        self.filteredcounts=(len(self.filteredbgs.keys()),sum(self.filteredbgs.values()))
+        self.filteredcounts_fornext=(len(self.filteredbgs_fornext.keys()),sum(self.filteredbgs_fornext.values()))
+
+        IndNGramStats={}
+        for U1,PostDist in self.remainbistats.items():
+            for U2,SpecBG in PostDist.items():
+                IndNGramStats[(U1,U2)]=SpecBG
+        self.sortedbistats=sorted(IndNGramStats.items(),key=lambda x:(x[1].nmi,x[0]),reverse=True)
+        
+        if self.orgbgtypecount==0:
+            self.typefilterrate=1
+            self.tokenfilterrate=1
+        else:
+            self.typefilterrate=self.filteredcounts[0]/self.orgbgtypecount
+            self.tokenfilterrate=self.filteredcounts[1]/self.orgbgtokencount
+
 
     # this is for one conddist. that is only one unit1, which can be a compound, plus postdist of singleton unit2s
     def generate_fbigramstat_perunit1(self,Unit1,PostDist):
@@ -178,6 +194,9 @@ class NPlus1GramStats(EquivalEqual):
             if Unit2 in self.u2grams.evtocc.keys():
                 Unit2Prob=self.u2grams.evtprob[Unit2]
                 Unit2Stats=(Unit2Occ,Unit2VarOcc,Unit2Prob)
+
+                ## this is where the bigram stats are computed 
+                ##
                 BGStat=SpecBiGram(Unit1,Unit1Stats,Unit2,Unit2Stats)
 
                 U1U2=myModule.flatten_tuple(Unit1+(Unit2,))

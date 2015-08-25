@@ -10,7 +10,7 @@ imp.reload(probability)
 imp.reload(count_ngrams)
 
 
-class TestUniBiStats(unittest.TestCase):
+class TestNPlus1GramStats(unittest.TestCase):
     def setUp(self):
  #       set_trace()
         self.sents=[ 'w1 w2 w3', 
@@ -24,12 +24,13 @@ class TestUniBiStats(unittest.TestCase):
                      'w2 w1 w5' ]
         
         self.text='\n'.join(self.sents)
-        UniGrams=count_ngrams.collect_nplus1grams(self.sents,None)
-        self.unistats=probability.NPlus1GramStats(UniGrams)
-        BiGrams=count_ngrams.collect_nplus1grams(self.sents,self.unistats)
-        self.bistats_nofilter=probability.NPlus1GramStats(BiGrams)
         set_trace()
-        self.bistats_filtered=probability.NPlus1GramStats(BiGrams,Threshs=([('nmi',0.2)],1))
+        UGsR=count_ngrams.collect_nplus1grams(self.sents,None)
+        self.unistats=probability.NPlus1GramStats(UGsR)
+        U2Grams=self.unistats.u2grams
+        BGsR=count_ngrams.collect_nplus1grams(self.sents,self.unistats)
+        self.bistats_nofilter=probability.NPlus1GramStats(BGsR,U2Grams=U2Grams)
+        self.bistats_filtering=probability.NPlus1GramStats(BGsR,U2Grams=U2Grams,Threshs=([('nmi',0.2)],1))
 
     def test10_ugram_loop(self):
 #        set_trace()
