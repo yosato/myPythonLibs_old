@@ -153,6 +153,8 @@ def destringify_halfjsonable(StringifiedTuple):
     if Type=='set':
         return set(Els)
     elif Type=='tuple':
+        if Els==['']:
+            return ()
         return tuple(Els)
 
 
