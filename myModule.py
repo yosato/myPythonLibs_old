@@ -103,12 +103,12 @@ def prompt_loop_bool(Prompt,Interact=False,Default=False,TO=10,DefaultSuppress=F
 def time_and_record(FSw,Message=''):
     import datetime
     Now=datetime.datetime.now()
-    output_stdout_fs('['+Now.strftime('%Y/%m/%d %H:%M')+'] '+Message)
+    output_stdout_fs('['+Now.strftime('%Y/%m/%d %H:%M')+'] '+Message,FSwLog=FSw)
 
 def output_stdout_fs(Stuff,FSwLog=None,Prefix=''):
     sys.stdout.write(Prefix+Stuff+'\n')
     if not FSwLog:
-        print('output file not specified')
+        print('log filepath not specified, ignoring the file output')
     else:
         FSwLog.write(Prefix+Stuff+'\n')
 
@@ -270,7 +270,7 @@ def ask_filenoexist_execute_json(FP,Function,ArgsKArgs,Message='Use the old file
     if Response is False:
         Json=json.loads(open(FP,'rt').read())
         Object=dejsonify_diclist(Json)
-        return Object
+        return Object,False
     else:
         (Bool,DirectP)=jsonable_p(Response)
         if not Bool:
@@ -280,7 +280,7 @@ def ask_filenoexist_execute_json(FP,Function,ArgsKArgs,Message='Use the old file
         else:
             ToJson=jsonify_diclist(Response)
         open(FP,'wt').write(json.dumps(ToJson))
-        return Response
+        return Response,True
 
 def ask_filenoexist_execute(FPs,Function,ArgsKArgs,Message='Use the old file',TO=10,DefaultReuse=True,Backup=True):
     if type(FPs).__name__=='str':

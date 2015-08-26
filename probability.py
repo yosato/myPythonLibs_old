@@ -121,10 +121,10 @@ class NPlus1GramStats(EquivalEqual):
         else:
             return FstElLen
 
-    def stringify_bistats(self,Thresh=100):
+    def stringify_bistats(self,TopN=100):
         Str=''
         for Cntr,(BG,BS) in enumerate(self.sortedbistats):
-            if Cntr>Thresh:
+            if Cntr>TopN:
                 break
             else:
                 Str=Str+'\n'+' '.join(BG[0])+' '+BG[1]+'\t'+str(BS.nmi)
@@ -231,30 +231,6 @@ class NPlus1GramStats(EquivalEqual):
                     RawBGsPerUnit1.add(U1U2)
 
         return BGsPerUnit1,RawBGsPerUnit1,FilteredBGs
-
-    def generate_trigramstat(self):
-        BiNowUni={}; TriNowBis=[]
-        # first you need (u1,u2) figures
-        PostDist={}
-        for Wd1,NGramStats in self.filteredbistats.items():
-            if not NGramStats:
-                Wd12Occ=0
-            else:
-                for Wd2,Wd12Stat in NGramStats.items():
-#                    PostDist[Wd12Stat.unit2]=Wd12Stat.unit2condocc
-                    Wd12Occ=Wd12Stat.unit2condvarocc
-  #          generate_bigramstat_p
-#                BiNowUni[(Wd1,Wd2,)]=Wd12Stat.jointprob
-  #              if Wd2 in self.bistats.keys():
-    #                for Wd3,BiStat in self.bistats[Wd2].items():
-      #                  BiWd3GivenWd12=self.bistats[Wd2][Wd3]
-        #                Wd3OccGivenWd12=BiWd3GivenWd12.unit2condocc
-          #              Wd3VarOccGivenWd12=BiWd3GivenWd12.unit2varocc
-            #            TriNowBi=BiGram((Wd1,Wd2,),Wd12Stat.Wd3,)
-              #          TriNowBis.append(TriNowBi)
-        #BiNowUni=DiscDist(BiNowUni)
-        #Hi=UniNGramStats(TriNowBis,BiNowUni)
-        return BiNowUni,TriNowBis
 
     def get_raw_pairs(self):
         Pairs=[]
