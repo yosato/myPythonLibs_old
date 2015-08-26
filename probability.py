@@ -166,13 +166,14 @@ class NPlus1GramStats(EquivalEqual):
         print('filtering bistats, of which unit1s number '+str(Unit1Cnt))
         FNGramStats={}; RawBGs=set(); CumFilteredCnts=defaultdict(int)
         for Cntr,(Unit1,PostDist) in enumerate(self.conddists.items()):
-            if Unit1Cnt>100000 and Cntr!=0 and Cntr%50000==0: print(str(Cntr)+' unit1s done')
+            if Unit1Cnt>100000 and Cntr!=0 and Cntr%20000==0: print(str(Cntr)+' unit1s done')
             (U1PostDists,RawBG,FilteredCnts)=self.generate_filteredstats_perunit1(Unit1,PostDist)
             for (U1U2,Cnt) in FilteredCnts.items():
                 CumFilteredCnts[U1U2]+=Cnt
             if U1PostDists:
                 FNGramStats[Unit1]=U1PostDists
                 RawBGs=RawBGs.union(RawBG)
+        print('filtering done, original '+str(len(self.remainbgs))+' now reduced to '+str(len(RawBGs)))
 
         self.remainbistats=FNGramStats
         self.remainbgs=RawBGs
