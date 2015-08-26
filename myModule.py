@@ -100,9 +100,17 @@ def prompt_loop_bool(Prompt,Interact=False,Default=False,TO=10,DefaultSuppress=F
 
     return YesNoBool
 
+def time_and_record(FSw,Message=''):
+    import datetime
+    Now=datetime.datetime.now()
+    output_stdout_fs('['+Now.strftime('%Y/%m/%d %H:%M')+'] '+Message)
 
-
-
+def output_stdout_fs(Stuff,FSwLog=None,Prefix=''):
+    sys.stdout.write(Prefix+Stuff+'\n')
+    if not FSwLog:
+        print('output file not specified')
+    else:
+        FSwLog.write(Prefix+Stuff+'\n')
 
 def choose_randomly(List,Num=1):
     import random
@@ -123,10 +131,10 @@ def ask_filenoexist_execute_pickle(FP,Function,ArgsKArgs,Message='Use the old fi
     Response=ask_filenoexist_execute(FP,Function,ArgsKArgs,Message=Message,TO=TO,DefaultReuse=DefaultReuse,Backup=Backup)
     if Response:
         dump_pickle(Response,FP)
-        return Response
+        return Response,False
     else:
         Pickle=load_pickle(FP)
-        return Pickle
+        return Pickle,True
 
 def jsonable_p(Obj,DirectP=True):
     JsonableAtoms=[ 'str', 'int', 'float' ]
