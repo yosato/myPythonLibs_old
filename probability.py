@@ -70,7 +70,7 @@ class NPlus1GramStats(EquivalEqual):
       embracing stuff, given plural conddists, churn out various stats including
       joint probabilities, mutual information and pointwise counterpart
     '''
-    def __init__(self,CDsRClosed,U1Tails=None,U2Grams=None,CorpusID=None,SentCnt=None):
+    def __init__(self,CDsRClosed,Order=True,U1Tails=None,U2Grams=None,CorpusID=None,SentCnt=None):
         # for conddists, we accept the raw dict or DiscDist for postdists, and keep them both for different attributes.
         # special case for unigrams
         # CDsR should contain a meta value for the occurrence of items to be ignored (for correct computation of Ngrams)
@@ -98,8 +98,9 @@ class NPlus1GramStats(EquivalEqual):
         self.conddists={ U1:DiscDist(PostDist) for (U1,PostDist) in CDsR.items() }
 
         self.corpus_id=CorpusID
-        self.eossym='eos%'
-        self.bossym='%bos'
+        if Order:
+            self.eossym='eos%'
+            self.bossym='%bos'
         self.remainbgs=set()
         for (U1,PD) in self.rawconddists.items():
             for U2 in PD.keys():
