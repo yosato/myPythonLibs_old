@@ -3,6 +3,29 @@ import sys,os,imp,re,subprocess,json
 
 #imp.reload(myModule)
 
+def dedup_totalidenticals(FPIn,FPOut=None,Min=80,WindowSize=50000):
+    if not FPOut:
+        FPOut=FPIn+'.dedup'
+    Seen=[]; Sentl=False
+    with open(FPIn) as FSr:
+        with open(FPOut,'wt') as FSw:
+            while not Sentl:
+                LiNe=FSr.readline()
+                if not LiNe:
+                    Sentl=True
+                    continue
+                Line=LiNe.strip()
+                if Line and len(Line)>Min and Line in Seen:
+                    print('dup found, "'+Line+'" at earlier by '+str(WindowSize-Seen.index(Line)))
+                    
+                else:
+                    if Line:
+                        Seen.append(Line)
+                    if len(Seen)>WindowSize:
+                        Seen.pop(0)
+                    FSw.write(LiNe)
+
+
 class JsonManip:
     def __init__(self,FP,Stuff):
         if FP.endswith('.json'):

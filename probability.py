@@ -122,13 +122,15 @@ class NPlus1GramStats(EquivalEqual):
         else:
             return FstElLen
 
-    def stringify_bistats(self,TopN=100):
+    def stringify_bistats(self,Criterion='nmi',TopN=100):
         Str=''
+        if not Criterion:
+            Critetion='nmi'
         for Cntr,(BG,BS) in enumerate(self.sortedbistats):
             if Cntr>TopN:
                 break
             else:
-                Str=Str+'\n'+' '.join(BG[0])+' '+BG[1]+'\t'+str(BS.nmi)
+                Str=Str+'\n'+' '.join(BG[0])+' '+BG[1]+'\t'+str(BS.__dict__[Criterion])
         return Str
 
     def pick_cds_unit1_satisfies_f(self,CDs,F):
@@ -280,6 +282,8 @@ class SpecBiGram(EquivalEqual):
 
         self.mis=all_mis(self.unit1prob,Unit2Stats[2],self.jointprob)
         self.nmi=self.mis[1][1]
+        self.mi=self.mis[0][0]
+        self.pmi=self.mis[1][0]
 
         #NGramStatsPerUnit1[Wd2]=BiStat(Wd1Prob,Wd2Prob,PostDist,Joint,MIs)
 
