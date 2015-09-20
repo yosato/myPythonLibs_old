@@ -1,8 +1,8 @@
 from distutils.core import setup
 setup(
     name = "pythonlib mine",
-    packages = ['pythonlib'],
-    version = "1.0.2",
+    packages = ['myModule','work_utils'],
+    version = "1.0.0",
     description = 'my own stuff for python',
     author = "Yo Sato",
     author_email = "yosato16@gmail.com",
