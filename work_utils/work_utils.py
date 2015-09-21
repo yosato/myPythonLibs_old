@@ -19,8 +19,12 @@ class LMBEExp:
             CmdDirPath=os.getenv('HOME')+'/projects/MyScript_Resources/tools/LMBE'
         self.cmddirpath=CmdDirPath
  
-    def adapt_board(self,OrgBoardFP,NewFeatsVals,NewBoardFP):
+    def generate_newboard(self,OrgBoardFP,NewFeatsVals):
         NewBoardFP=os.path.join(self.expdirrt,self.lang,self.expname,'board_'+self.expname+'.csv')
+
+        CmdForSingleLang=' '.join(['python3', os.getenv('HOME')+'/yo/myProgs/iroiro_py/extract_lang_board.py', OrgBoardFP, self.lang, '>', NewBoardFP  ])
+        SingleLangExtractProc=subprocess.Popen(CmdForSingleLang,shell=True)
+        SingleLangExtractProc.wait()
 
         CmdStem=' '.join(['perl', self.cmddirpath+'/edit_board.pl', OrgBoardFP, '-l', self.lang, '-o', self.boardfp])
         
@@ -34,18 +38,11 @@ class LMBEExp:
         Return=Proc.wait()
 
         return Return
-    
     def run_exp(self,Stages):
         ShellCmd=' '.join([self.cmddirpath+'/LMBE.pl', self.lang, '-x', self.expdir, '-c', self.boardfp, '-'+Stages])
         Proc=subprocess.Popen(ShellCmd,shell=True)
         Proc.communicate()
 
-
-def get_allfeatsvals_langs_board(BoardFP,Langs):
-    FsVsLangs=collections.OrderedDict()
-    for Lang in Langs:
-        FsVsLangs[Lang]=get_allfeatsvals_lang_board(BoardFP,Lang)
-    return FsVsLangs
 
 def get_allfeatsvals_lang_board(BoardFP,Lang):
     Cmd=' '.join(['perl $MYSCRIPT_RESOURCES_DIR/tools/LMBE/edit_board.pl', BoardFP, '-l', Lang, '-r'])
@@ -62,14 +59,38 @@ def get_featsvals_board(BoardFP,Langs,Feats):
             Filtered[Lang][Feat]=FsVsLangs[Lang][Feat]
     return Filtered
 
+def stringify_allfeatsvals_lang_board(Lang,FsVs):
+    Str='lg_code;'+Lang+'\n'
+    for F,V in FsVs.items():
+        Str=Str+F+';'+V+'\n'
+    return Str
 
-    Cmd=' '.join([CmdStem,'-r','-f',Feat])
-#    cmd_getfeat=lambda Feat: ' '.join([CmdStem, ' -r ', ' -f ', Feat])
-#    execute_cmd_getfeat=lambda Cmd: subprocess.Popen(Cmd, shell=True,stdout=subprocess.PIPE).communicate()[0].decode().strip()
+AdmissibleFts=[get_allfeatsvals_lang_board('','fr_FR')]
+AsmissibleLangs=['fr_FR','fr_FR_lite']
 
-    Val=subprocess.Popen(Cmd, shell=True,stdout=subprocess.PIPE).communicate()[0].decode().strip()
+class BoardFsVs:
+    def __init__(self,FsVsLangs,AdmissibleLangs,AdmissibleFts):
+        self.admissible_feats=AdmissibleFts
+        self.admissible_langs=AdmissibleLangs
+        self.populate_featsvals(FsVsLangs)
+    def populate_featsvals(self,FsVsLangs):
+        ValidFsVsLangs=collections.OrderdDict()
+        for Lang,FsVs in FsVsLangs.items():
+            ValFsVs=collections.OrderedDict()
+            InputFts=list(FsVs.keys())
+            for AdmissibleFt in AdmissibleFts:
+                if AdmissibleFt in InputFts:
+                    InputFts.remove(AdmissibleFt)
+                    ValFsVs[AdmissibleFt]=FsVs[AdmissibleFt]
+                else:
+                    ValFsVs[AdmissibleFt]=''
+            if InputFts:
+                print('these alleged features are not admissible')
+                print(InputFts)
+            ValidFsVsLangs[Lang]=ValFsVs
+        self.feats_vals=ValidFsVsLangs
 
-#        Proc=subprocess.Popen(CmdSte,,shell=True,stdout=subprocess.PIPE)
-    #Val=execute_cmd_getfeat(cmd_getfeat(Feat))
-    return FeatsVals
+        
+
+            
 
