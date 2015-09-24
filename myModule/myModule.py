@@ -1,11 +1,11 @@
 import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,inspect,json
 
-import  textproc,fileproc
-imp.reload(textproc)
-imp.reload(fileproc)
+#import  textproc,fileproc
+#imp.reload(textproc)
+#imp.reload(fileproc)
 
-from textproc import *
-from fileproc import *
+#from .textproc import *
+#from .fileproc import *
 
 #timeout = 10
 #t = Timer(timeout, print, ['Sorry, times up'])
@@ -118,7 +118,7 @@ def choose_randomly(List,Num=1):
 
 def number_lines(FP,Ext='numbered',ExtRepl=False):
     if ExtRepl:
-        OutputFP=fileproc.change_ext(FP,Ext)
+        OutputFP=change_ext(FP,Ext)
     else:
         OutputFP=FP+'.'+Ext
     FSw=open(OutputFP,'wt')
@@ -452,7 +452,7 @@ def get_endpos_fs(FS):
 
 
 def change_stem(FP,Addition):
-    StExt=fileproc.get_stem_ext(FP)
+    StExt=get_stem_ext(FP)
     return StExt[0]+Addition+'.'+StExt[1]
 
 def indicate_loop_progress(Var,Interval,Message='progress',Increment=1):

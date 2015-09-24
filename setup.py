@@ -6,7 +6,7 @@ setup(
     description = 'my own stuff for python',
     author = "Yo Sato",
     author_email = "yosato16@gmail.com",
-    download_url = "https://github.com/yosato/myProgs/pythonlib/pythonlib.tar.gz",
+#    download_url = "https://github.com/yosato/myProgs/pythonlib/pythonlib.tar.gz",
     classifiers = [
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
