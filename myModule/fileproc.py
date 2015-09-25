@@ -1,7 +1,7 @@
 import sys,os,imp,re,subprocess,json
-#import myModule
+import myModule
 
-#imp.reload(myModule)
+imp.reload(myModule)
 
 def dedup_totalidenticals(FPIn,FPOut=None,Min=80,WindowSize=50000):
     if not FPOut:
@@ -183,7 +183,7 @@ def destringify_halfjsonable(StringifiedTuple):
 
 
 def ask_filenoexist_execute_json(FP,Function,ArgsKArgs,Message='Use the old file',TO=10,DefaultReuse=True,Backup=True):
-    import json
+    import json,myModule
     Response=myModule.ask_filenoexist_execute(FP,Function,ArgsKArgs,Message=Message,TO=TO,DefaultReuse=DefaultReuse,Backup=Backup)
     if Response is False:
         PureJson=json.loads(open(FP,'rt').read())

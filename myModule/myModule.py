@@ -1,11 +1,11 @@
 import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,inspect,json
 
-#import  textproc,fileproc
-#imp.reload(textproc)
-#imp.reload(fileproc)
+import  textproc,fileproc
+imp.reload(textproc)
+imp.reload(fileproc)
 
-#from .textproc import *
-#from .fileproc import *
+from .textproc import *
+from .fileproc import *
 
 #timeout = 10
 #t = Timer(timeout, print, ['Sorry, times up'])
