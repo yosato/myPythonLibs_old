@@ -1,7 +1,7 @@
 from distutils.core import setup
 setup(
-    name = "pythonlib mine",
-    packages = ['myModule','work_utils'],
+    name = "pythonlib-ys",
+    packages = ['pythonlib_ys','work_utils'],
     version = "1.0.0",
     description = 'my own stuff for python',
     author = "Yo Sato",
