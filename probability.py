@@ -1,6 +1,6 @@
 import imp,sys,math,copy,collections,fractions,pdb
 from collections import defaultdict
-import myModule
+from pythonlib_ys import main as myModule
 imp.reload(myModule)
 Debug=1
 

@@ -1784,12 +1784,12 @@ def ask_filenoexist_execute_json(FP,Function,ArgsKArgs,Message='Use the old file
         Json=dejsonify_diclist(PureJson)
         return Json
     else:
-        (Bool,Level)=jsonable_p(Response)
+        (Bool,DirectP)=jsonable_p(Response)
         if not Bool:
             print('not jsonable, only returning the object')
-        elif Level=='direct':
+        elif DirectP:
             ToJson=Response
-        elif Level=='indirect':
+        else:
             ToJson=jsonify_diclist(Response)
         open(FP,'wt').write(json.dumps(ToJson))
         return Response
