@@ -47,8 +47,10 @@ class LMBEExp:
 def get_allfeatsvals_lang_board(BoardFP,Lang):
     Cmd=' '.join(['perl $MYSCRIPT_RESOURCES_DIR/tools/LMBE/edit_board.pl', BoardFP, '-l', Lang, '-r'])
     EBoardOutputAll=subprocess.Popen(Cmd, shell=True,stdout=subprocess.PIPE).communicate()[0].decode().strip()
-    AllFsVs=collections.OrderedDict()
-    AllFsVs.update([ (Line.strip().split()[1],Line.strip().split()[-1] ) for Line in EBoardOutputAll.split('\n') ])
+    AllFsVsList=[ (Line.strip().split()[1],Line.strip().split()[-1] ) for Line in EBoardOutputAll.split('\n') ]
+    AllFsVsList=[ (F,'') if V=="''" else (F,V) for (F,V) in AllFsVsList ]
+    AllFsVs=collections.OrderedDict(AllFsVsList)
+    AllFsVs.update()
     return AllFsVs
 
 def get_featsvals_board(BoardFP,Langs,Feats):
@@ -65,8 +67,13 @@ def stringify_allfeatsvals_lang_board(Lang,FsVs):
         Str=Str+F+';'+V+'\n'
     return Str
 
-AdmissibleFts=[get_allfeatsvals_lang_board('','fr_FR')]
+
 AsmissibleLangs=['fr_FR','fr_FR_lite']
+
+class FsVsLang:
+    def __init__(self,Lang,FsVs):
+        self.lang=Lang
+        self.feats_vals=FsVs
 
 class BoardFsVs:
     def __init__(self,FsVsLangs,AdmissibleLangs,AdmissibleFts):
