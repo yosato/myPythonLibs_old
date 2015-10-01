@@ -74,6 +74,16 @@ class FsVsLang:
     def __init__(self,Lang,FsVs):
         self.lang=Lang
         self.feats_vals=FsVs
+    def stringify_feats_vals(self,VOnly=False):
+        Str=''
+        for F,V in self.FsVs:
+            if VOnly:
+                Str2Add=V
+            else:
+                Str2Add=F+';'+V
+            Str=Str+Str2Add+'\n'
+        return Str
+            
 
 class BoardFsVs:
     def __init__(self,FsVsLangs,AdmissibleLangs,AdmissibleFts):

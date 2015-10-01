@@ -7,6 +7,28 @@ import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,in
 #answer = input(prompt)
 #t.cancel()
 
+def proportions_valid_p(Proportions):
+    if any(type(El).__name__!='int' for El in Proportions):
+        sys.exit('Proportions have to be integers')
+    elif sum(Proportions)!=100:
+        sys.exit('Proportions must add to 100')
+    else:
+        return True
+
+def split_list_proportions(List,Proportions):
+    if proportions_valid_p(Proportions):
+        PrvCutPoint=0;Slices=[]
+        for Prop in Proportions[:-1]:
+            CurCutPoint=int(PrvCutPoint+len(List)//(100/Prop))
+            Slices.append(List[PrvCutPoint:CurCutPoint])
+            PrvCutPoint=CurCutPoint
+        Slices.append(List[PrvCutPoint:])
+    return Slices
+        
+
+
+
+
 class MyEncoder(json.JSONEncoder):
     def default(self,o):
         return o.__dict__
