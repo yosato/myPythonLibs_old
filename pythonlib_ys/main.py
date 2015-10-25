@@ -25,6 +25,11 @@ def split_list_proportions(List,Proportions):
         Slices.append(List[PrvCutPoint:])
     return Slices
         
+def find_insert_point_byattr(ToInsert,Objs,Attr):
+    import bisect
+    Keys=[ Obj.__dict__[Attr] for Obj in Objs ]
+    return bisect.bisect_left(Keys,ToInsert)
+
 
 
 
