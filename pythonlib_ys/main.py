@@ -491,11 +491,6 @@ def human_readable_num(Num):
         NumStr=str(Num//1000000)+'M '+str(Num)[-5:-2]+'T '+str(Num)[-2:]
     return NumStr
 
-def get_linecount(FP):
-    print(FP+': counting lines...')
-    LineCnt=int(subprocess.check_output(['wc','-l',FP]).split()[0].decode())
-    print('...counted')
-    return LineCnt
 
 def process_ifnotexist(FP,FuncN,Args,PickleP=False,FileVar=''):
     RealFP=FP+FileVar
@@ -1877,8 +1872,18 @@ def get_stem_ext(FN):
     else:
         Matches=(FN,'')
     return Matches
+
 def get_linecount(FP):
+    FSr=open(FP)
+    Cnt=0
     print(FP+': counting lines...')
-    LineCnt=int(subprocess.check_output(['wc','-l',FP]).split()[0].decode())
-    print('...counted')
-    return LineCnt
+    while True:
+        if Cnt!=0 and Cnt%500000==0:
+            print('quite a few... now '+str(Cnt)+' and still going')
+        if FSr.readline():
+            Cnt+=1
+        else:
+            break
+    return Cnt
+
+
