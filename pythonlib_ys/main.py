@@ -7,6 +7,15 @@ import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,in
 #answer = input(prompt)
 #t.cancel()
 
+def get_nth_line(FP,N):
+    Line=None
+    with open(FP) as FSr:
+        for i in range(N-1):
+            FSr.readline()
+        Line=FSr.readline()
+    return Line
+
+
 def proportions_valid_p(Proportions):
     if any(type(El).__name__!='int' for El in Proportions):
         sys.exit('Proportions have to be integers')
