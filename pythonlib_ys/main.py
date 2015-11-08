@@ -10,12 +10,28 @@ import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,in
 def get_nth_line(FP,N):
     Line=None
     with open(FP) as FSr:
-        for i in range(N-1):
-            FSr.readline()
-        Line=FSr.readline()
+        Line=get_nth_line_frompos(FSr,N,0)
     return Line
 
+def get_nth_line_frompos(FSr,N,Pos):
+    FSr.seek(Pos)
+    for i in range(N-1):
+        FSr.readline()
+    return FSr.readline
 
+def generate_nth_line(FileInput,LstLineNo,TgtLineNo):
+    # get the current line number,
+    CurLineNo=FileInput.lineno()
+    # see which it is closest to, the start, the end, or the current location
+    Closest,PosInList=closest(TgtLineNo,(0,CurLineNo,LstLineNo))
+    if PosInList==0:
+        FileInput.seek(0)
+        Diff=TgtLineNo-Closest
+        get_nth_line_frompos(FSr,TgtLineNo,Diff)
+    elif PosInList==1:
+        FileInput.seek(
+
+    
 def proportions_valid_p(Proportions):
     if any(type(El).__name__!='int' for El in Proportions):
         sys.exit('Proportions have to be integers')
@@ -602,27 +618,33 @@ def file_exists_prompt_loop_bool(Prompt,FP,Default=True,TO=10):
     else:
         return False
 
-def closest(TgtNum,Nums):
-    Nums.sort()
+def closest(TgtNum,Nums,Sorted=False):
+    ''' returns the number in a list that is closest to the given number, as well as its position in the list
+        if there are the same values in the list pick the first one,
+        or if there are two number with the same distance, pick the smaller one
+
+    '''
+    # if the same number is in the list, that's the one
+    if TgtNum in Nums:
+        Closest=TgtNum
+
+    # otherwise sort your list if not done yet,
+    if not Sorted:
+        Nums.sort()
+        
     Top=Nums[0];Tail=Nums[-1]
+    # tgt could just be smaller than any in the list (then the top is what you want)
     if TgtNum<Top:
         Closest=Top
+    # or may be larger than any
     elif TgtNum>Tail:
         Closest=Tail
-    elif TgtNum in Nums:
-        Closest=TgtNum
+    # othrewise check for each num     
     else:
-        PrvNum=Nums[0]-1
-        for Num in Nums:
-            Diff=TgtNum-Num
-            if Diff<0:
-                if TgtNum-PrvNum<Num-TgtNum:
-                    Closest=PrvNum
-                else:
-                    Closest=Num
-                break
-            PrevNum=Num
-    return Closest
+        Closest=min(abs(TgtNum-Num) for Num in Nums)
+
+    return Closest, Nums.index(Closest)
+
 
 def larger(Num1,Num2):
     if Num1>Num2:
