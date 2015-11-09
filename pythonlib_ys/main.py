@@ -1,5 +1,7 @@
 import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,inspect,json
 
+from ipdb import set_trace
+
 #timeout = 10
 #t = Timer(timeout, print, ['Sorry, times up'])
 #t.start()
@@ -7,31 +9,98 @@ import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,in
 #answer = input(prompt)
 #t.cancel()
 
+def aareadline_reverse(fh, buf_size=8192):
+    """a generator that returns the lines of a file in reverse order"""
+    #with open(filename) as fh:
+    segment = None
+    offset = 0
+    fh.seek(0, os.SEEK_END)
+    total_size = remaining_size = fh.tell()
+    while remaining_size > 0:
+        offset = min(total_size, offset + buf_size)
+        fh.seek(-offset, os.SEEK_END)
+        buffer = fh.read(min(remaining_size, buf_size))
+        remaining_size -= buf_size
+        lines = buffer.split('\n')
+        # the first line of the buffer is probably not a complete line so
+        # we'll save it and append it to the last line of the next buffer
+        # we read
+        if segment is not None:
+            # if the previous chunk starts right from the beginning of line
+            # do not concact the segment to the last line of new chunk
+            # instead, yield the segment first 
+            if buffer[-1] is not '\n':
+                lines[-1] += segment
+            else:
+                yield segment
+        segment = lines[0]
+        for index in range(len(lines) - 1, 0, -1):
+            if len(lines[index]):
+                yield lines[index]
+    yield segment
+
+def readline_reverse(FSr):
+    BuffSize=8192
+    Cntr=1
+    while True:
+        # if you hit the beginning, reduce the buff
+        CurPos=FSr.tell()
+        if CurPos<BuffSize:
+            BuffSize=CurPos
+
+        FSr.buffer.seek(-BuffSize)
+        Buff=FSr.read(BuffSize)
+        if '\n' in Buff:
+            FSr.readline()
+            break
+        else:
+            Cntr+=1
+            BuffSize+=BuffSize
+
+    return FSr.readline()
+    
 def get_nth_line(FP,N):
     Line=None
     with open(FP) as FSr:
-        Line=get_nth_line_frompos(FSr,N,0)
+        Line,_,_=get_nth_line_frompos(FSr,N,0)
     return Line
 
-def get_nth_line_frompos(FSr,N,Pos):
-    FSr.seek(Pos)
-    for i in range(N-1):
-        FSr.readline()
-    return FSr.readline
+def get_nths_lines(FP,TgtLineNums):
+    '''
+    extract the lines for a particular set of line numbers in a file in that order, by traversing a file stream
+    '''
+    set_trace()
+    Lines=[]
+    TotalLineCnt=get_linecount(FP)
+    with open(FP) as FSr:
+        CurPos=CurLineNum=0
+        # for each target line num,
+        for TgtLineNum in TgtLineNums:
+            # you find which of the three is closest, beginning, end or the current position
+            ClosestNum,Which=closest(TgtLineNum,[0,CurLineNum,TotalLineCnt])
+            # then you move FSr for the diff
+            Offset=TgtLineNum-ClosestNum
+            Line,FSr=get_nth_line_frompos(FSr,CurPos,Offset)
+            CurPos=FSr.tell()
+            CurLineNum=CurLineNum+Offset
+            Lines.append(Line)
+    return Lines        
 
-def generate_nth_line(FileInput,LstLineNo,TgtLineNo):
-    # get the current line number,
-    CurLineNo=FileInput.lineno()
-    # see which it is closest to, the start, the end, or the current location
-    Closest,PosInList=closest(TgtLineNo,(0,CurLineNo,LstLineNo))
-    if PosInList==0:
-        FileInput.seek(0)
-        Diff=TgtLineNo-Closest
-        get_nth_line_frompos(FSr,TgtLineNo,Diff)
-    elif PosInList==1:
-        FileInput.seek(
+def get_nth_line_frompos(FSr,CurPos,Offset):
+    FSr.seek(CurPos)
+    readline_eitherway(FSr,Offset)
+    Line=FSr.readline()
+    return Line,FSr 
 
-    
+def readline_eitherway(FSr,Offset):
+    if Offset>0:
+        for i in range(Offset-1):
+            FSr.readline()
+    else:
+        for i in range(Offset):
+            readline_reverse(FSr)
+    return FSr.readline()
+        
 def proportions_valid_p(Proportions):
     if any(type(El).__name__!='int' for El in Proportions):
         sys.exit('Proportions have to be integers')
@@ -618,19 +687,19 @@ def file_exists_prompt_loop_bool(Prompt,FP,Default=True,TO=10):
     else:
         return False
 
-def closest(TgtNum,Nums,Sorted=False):
+def closest(TgtNum,OrgNums,Sorted=False):
     ''' returns the number in a list that is closest to the given number, as well as its position in the list
         if there are the same values in the list pick the first one,
         or if there are two number with the same distance, pick the smaller one
 
     '''
     # if the same number is in the list, that's the one
-    if TgtNum in Nums:
+    if TgtNum in OrgNums:
         Closest=TgtNum
 
     # otherwise sort your list if not done yet,
     if not Sorted:
-        Nums.sort()
+        Nums=sorted(OrgNums)
         
     Top=Nums[0];Tail=Nums[-1]
     # tgt could just be smaller than any in the list (then the top is what you want)
@@ -641,9 +710,14 @@ def closest(TgtNum,Nums,Sorted=False):
         Closest=Tail
     # othrewise check for each num     
     else:
-        Closest=min(abs(TgtNum-Num) for Num in Nums)
+        MinDiff=float('inf')
+        for Num in Nums:
+            Diff=abs(TgtNum-Num)
+            if Diff<MinDiff:
+                MinDiff=Diff
+                Closest=Num
 
-    return Closest, Nums.index(Closest)
+    return Closest, OrgNums.index(Closest)
 
 
 def larger(Num1,Num2):
