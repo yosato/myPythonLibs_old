@@ -1,6 +1,6 @@
 import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,inspect,json
 
-from ipdb import set_trace
+from pdb import set_trace
 
 #timeout = 10
 #t = Timer(timeout, print, ['Sorry, times up'])
@@ -40,36 +40,47 @@ def aareadline_reverse(fh, buf_size=8192):
     yield segment
 
 def readline_reverse(FSr):
-    BuffSize=8192
+    BuffSize=1024
     Cntr=1
     while True:
         # if you hit the beginning, reduce the buff
         CurPos=FSr.tell()
         if CurPos<BuffSize:
             BuffSize=CurPos
-
-        FSr.buffer.seek(-BuffSize)
+           
+        FSr.buffer.seek(-1*BuffSize,os.SEEK_CUR)
+        FSr.seek(FSr.tell())
         Buff=FSr.read(BuffSize)
         if '\n' in Buff:
-            FSr.readline()
+            Line=Buff.strip().split('\n')[-1]+'\n'
             break
         else:
             Cntr+=1
             BuffSize+=BuffSize
 
-    return FSr.readline()
+    return Line
     
 def get_nth_line(FP,N):
     Line=None
     with open(FP) as FSr:
-        Line,_,_=get_nth_line_frompos(FSr,N,0)
+        for i in range(N-1):
+            FSr.readline()
+        Line=FSr.readline()
+    return Line
+
+def get_nth_line_reverse(FP,N):
+    Line=None
+    with open(FP) as FSr:
+        FSr.seek(0,2)
+        for i in range(N-1):
+            readline_reverse()
+        Line=readline_reverse()
     return Line
 
 def get_nths_lines(FP,TgtLineNums):
     '''
     extract the lines for a particular set of line numbers in a file in that order, by traversing a file stream
     '''
-    set_trace()
     Lines=[]
     TotalLineCnt=get_linecount(FP)
     with open(FP) as FSr:
