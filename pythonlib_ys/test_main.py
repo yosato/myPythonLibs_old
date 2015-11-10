@@ -10,6 +10,7 @@ class TestFileRelated(unittest.TestCase):
         self.testFP=os.path.join(self.testDir,'sample.txt')
         self.testLines1='aaa\niii\nuuu\neee\nooo\n'
         self.testLines2='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\niiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii\nuuu\neeeeeeeeeeee\nooooooooo\n'
+        self.largeFP=os.path.join(self.testDir,'sampleLarge.txt')
     def test_readline_reverse(self):
         set_trace()
         for TestLines in (self.testLines1,self.testLines2):
@@ -19,6 +20,13 @@ class TestFileRelated(unittest.TestCase):
             LstLine=main.readline_reverse(FSr)
             FSr.close()
             self.assertEqual(LstLine,'uuu')
+    def test_readline_reverse_speed(self):
+        main.get_nth_line()
+        FSr=open(self.largeFP)
+        for FSr.readlines()
+        FSr.close()
+        
+        
     def test_get_nths_lines(self):
         set_trace()
         open(self.testFP,'wt').write(self.testLines1)
