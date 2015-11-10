@@ -1,6 +1,6 @@
-import unittest,os,imp
-import main
-imp.reload(main)
+import unittest,os,imp,timeit,datetime
+import main as myModule
+imp.reload(myModule)
 from pdb import set_trace
 
 class TestFileRelated(unittest.TestCase):
@@ -12,25 +12,34 @@ class TestFileRelated(unittest.TestCase):
         self.testLines2='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\niiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii\nuuu\neeeeeeeeeeee\nooooooooo\n'
         self.largeFP=os.path.join(self.testDir,'sampleLarge.txt')
     def test_readline_reverse(self):
-        set_trace()
+        
         for TestLines in (self.testLines1,self.testLines2):
             open(self.testFP,'wt').write(self.testLines)
             FSr=open(self.testFP,'rt')
             FSr.readline();FSr.readline();FSr.readline()
-            LstLine=main.readline_reverse(FSr)
+            LstLine=myModule.readline_reverse(FSr)
             FSr.close()
             self.assertEqual(LstLine,'uuu')
     def test_readline_reverse_speed(self):
-        main.get_nth_line()
-        FSr=open(self.largeFP)
-        for FSr.readlines()
-        FSr.close()
+        set_trace()
+        B4=datetime.datetime.now()
+        myModule.get_nth_line(self.largeFP,20000)
+        After=datetime.datetime.now()
+        Time1=After-B4
+#        myTimer1=timeit.Timer("myModule.get_nth_line(,20000)","import main as myModule")
+ #       Time1=myTimer1.timeit()
+        B4=datetime.datetime.now()
+        myModule.get_nth_line_reverse(self.largeFP,20000)
+        After=datetime.datetime.now()
+        Time2=After-B4
+        
+        self.assertTrue(Time2-Time1>0.1)
         
         
     def test_get_nths_lines(self):
-        set_trace()
+        #set_trace()
         open(self.testFP,'wt').write(self.testLines1)
-        AllegedLines=main.get_nths_lines(self.testFP,[3,5,2])
+        AllegedLines=myModule.get_nths_lines(self.testFP,[3,5,2])
         self.assertEqual(AllegedLines,['uuu','ooo','iii'])
            
             

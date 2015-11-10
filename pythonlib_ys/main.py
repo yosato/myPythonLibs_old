@@ -73,8 +73,8 @@ def get_nth_line_reverse(FP,N):
     with open(FP) as FSr:
         FSr.seek(0,2)
         for i in range(N-1):
-            readline_reverse()
-        Line=readline_reverse()
+            readline_reverse(FSr)
+        Line=readline_reverse(FSr)
     return Line
 
 def get_nths_lines(FP,TgtLineNums):
