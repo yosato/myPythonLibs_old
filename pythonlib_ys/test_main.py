@@ -3,6 +3,20 @@ import main as myModule
 imp.reload(myModule)
 from pdb import set_trace
 
+class TestJsonRelated(unittest.TestCase):
+    def setUp(self):
+        self.jsonFPSmall=os.path.join(self.testDir,'sampleJsonSmall.json')
+        self.jsonFPLarge=os.path.join(self.testDir,'sampleJsonLarge.json')
+    def sort_jsons_fromfile(self):
+        set_trace()
+        Before=datetime.datetime.now()
+        myModule.sort_jsons_fromfile(self.jsonFPLarge,OutFP=self.jsonFPLarge+'.sorted')
+        After=datetime.datetime.now()
+        self.assertTrue(After-Before.seconds<20)
+        self.assertEqual()
+        
+        
+
 class TestFileRelated(unittest.TestCase):
     def setUp(self):
 
@@ -11,6 +25,7 @@ class TestFileRelated(unittest.TestCase):
         self.testLines1='aaa\niii\nuuu\neee\nooo\n'
         self.testLines2='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\niiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii\nuuu\neeeeeeeeeeee\nooooooooo\n'
         self.largeFP=os.path.join(self.testDir,'sampleLarge.txt')
+
     def test_readline_reverse(self):
         
         for TestLines in (self.testLines1,self.testLines2):
