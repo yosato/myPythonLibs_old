@@ -1996,10 +1996,10 @@ def get_stem_ext(FN):
 def get_linecount(FP):
     FSr=open(FP)
     Cnt=0
-    print(FP+': counting lines...')
+    print('get_linecount, '+FP+': counting lines...')
     while True:
-        if Cnt!=0 and Cnt%500000==0:
-            print('quite a few... now '+str(Cnt)+' and still going')
+        if Cnt!=0 and Cnt%1000000==0:
+            print('get_linecount: quite a few lines... now '+str(Cnt)+' and still going')
         if FSr.readline():
             Cnt+=1
         else:

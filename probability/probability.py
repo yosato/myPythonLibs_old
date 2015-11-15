@@ -145,8 +145,7 @@ def all_mis(M1,M2,Joint):
         PWMI=pw_mutual_info(M1,M2,Joint)
         NPWMI=PWMI/-bit_required(Joint)
         MI=mutual_info_unit(M1,M2,Joint)
-        NMI=MI/-entropy_moto(Joint)
-        NMI=PWMI*Joint
+        NMI=MI/-bit_required(Joint)
     return (MI,NMI),(PWMI,NPWMI)
 
 def normalised_pwmi_mi(Marg1,Marg2,Joint):
