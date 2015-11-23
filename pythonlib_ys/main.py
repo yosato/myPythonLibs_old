@@ -1740,7 +1740,7 @@ def kana2kana(Char):
 ## fileproc
 ##
 
-def dedup_totalidenticals(FPIn,FPOut=None,Min=80,WindowSize=50000):
+def dedup_totalidenticals(FPIn,FPOut=None,Min=80,WindowSize=5000):
     if not FPOut:
         FPOut=FPIn+'.dedup'
     Seen=[]; Sentl=False

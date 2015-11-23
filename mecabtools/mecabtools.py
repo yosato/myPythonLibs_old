@@ -1,7 +1,10 @@
-import re, imp, os
-import myModule
+import re, imp, os, sys
+from pythonlib_ys import main as myModule
 imp.reload(myModule)
-
+try:
+    from ipdb import set_trace
+except:
+    from pdb import set_trace
 # Chunk:
 # SentLine:
 
@@ -28,7 +31,15 @@ def extract_sentences(FileP,LineNums='all',ReturnRaw=False,Print=False):
             Sentl=True
     if Print: print(Sents2Ext)
     return Sents2Ext
- 
+
+def split_traintest(FP,Percentage=10,Where=50):
+    Sents=extract_sentences(FP)
+    TestStart=len(Sents)//(Where/100)
+    TestLen=len(Sents)//(Percentage/100)
+    TestEnd=TestStart+TestLen
+
+    return Sents[:TestStart]+Sents[TestEnd:],Sents[TestStart:TestEnd]
+
 def sentence_list(FP,IncludeEOS=True):
     if IncludeEOS:
         return re.split(r'\nEOS',open(FP,'rt').read())
@@ -36,46 +47,68 @@ def sentence_list(FP,IncludeEOS=True):
         return open(FP,'rt').read().split('EOS')
 
 
+def filter_errors_file(FP,FtCnts,Recover=False,Output=None):
+    set_trace()
+    '''
+    def find_eof_errors(FP):
+  
+        FSr=open(FP)
+        LstLiNe=myModule.readline_reverse(FSr)
+        TrailEmptyLineCnt=0
+        while LstLiNe.strip()=='':
+            LstLine=myModule.readline_reverse(FSr)
+            TrailEmptyLineCnt+=1
+        
+        if LstLine!='EOS':
+            LstEOSP=False
+        return (TrailEmptyCnt,LstEOSP)    
+            
+    '''        
 
+    def mark_errors_sentlines(SentLines,FtCnts=[7,9],Recover=False):
+        MkdLines=[]
+        for Line in SentLines:
+            Wrong=something_wrong_insideline(Line,FtCnts)
+            if not Wrong:
+                MkdLines.append((Line,(True,'original')))
+            else:
+                if Recover:
+                    Attempted=try_and_recover(Line,Wrong)
+                    if Attempted is None:
+                        MkdLines.append((Line,(False,Wrong)))
+                    elif not something_wrong_insideline(Attempted,FtCnts):
+                        MkdLines.append((Line,(False,Wrong)))
+                    else:
+                        MkdLines.append((Line,(True,'recovered')))
+                else:
+                    MkdLines.append((Line,(False,Wrong)))
 
-def filter_errors(FP,FtCnts,Recover=False,Output=None):
+        return MkdLines
+
+    
     with open(FP,'rt') as FSr:
+       # (TrailEmptyCnt,LstEOSP)=find_eof_errors(FP)
+       # if not Recover and not (TrailEmptyCnt and LstEOSP):
+       #     sys.exit('there is an EOF error, either empty trailing lines or no EOS')
+            
         extract_chunk=lambda FSr: myModule.pop_chunk_from_stream(FSr,Pattern='EOS')
 
-        FilteredSents=[]; SentCnt=0; NextLine=True
+        GoodSents=MkdBadSents=[]; SentCnt=0; NextLine=True
         while NextLine:
             FSr,Sent,_,NextLine=extract_chunk(FSr)
             if Sent.strip()=='':
                 if Recover:
-                    FilteredLinesPerSent=None
-                else:
-                    FilteredLinesPerSent=(Sent,'empty sent',)
+                    MkdBadSents.append([(Sent,(False,'empty sent'))])
             else:
                 SentCnt+=1
-                FilteredLinesPerSent=filter_errors_sent(Sent.strip().split('\n'),FtCnts,Recover=Recover)
-            FilteredSents.append(FilteredLinesPerSent)
-            if not NextLine and Sent[-1]!='EOS':
-                FilteredSents.append(('','tail EOS absent',))
-    return FilteredSents
+                MkdLines=mark_errors_sentlines(Sent.strip().split('\n'),FtCnts,Recover=Recover)
+                if not(all(MkdLine[1][0] for MkdLine in MkdLines)):
+                    MkdBadSents.append(MkdLines)
+                else:
+                    GoodSents.append(Sent)
+                                       
 
-def filter_errors_sent(SentLines,FtCnts=[7,9],Recover=False):
-    FilteredLines=[]
-    for Line in SentLines:
-        Wrong=something_wrong_insideline(Line,FtCnts)
-        if not Wrong:
-            FilteredLines.append(Line)
-        else:
-            if Recover:
-                Attempted=try_and_recover(Line,Wrong)
-                if Attempted is None:
-                    continue
-                elif not something_wrong_insideline(Attempted,FtCnts):
-                    FilteredLines.append(Attempted)
-                    continue
-
-            FilteredLines.append((Line,Wrong,))
-
-    return FilteredLines
+    return GoodSents,MkdBadSents
 
 
 def something_wrong_insideline(Line,FtCnts):
