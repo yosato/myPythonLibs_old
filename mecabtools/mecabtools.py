@@ -46,9 +46,9 @@ def sentence_list(FP,IncludeEOS=True):
     else:
         return open(FP,'rt').read().split('EOS')
 
-
-def filter_errors_file(FP,FtCnts,Recover=False,Output=None):
-    set_trace()
+    
+def mark_sents(FP,FtCnts,Recover=True,Output=None):
+    #set_trace()
     '''
     def find_eof_errors(FP):
   
@@ -65,23 +65,32 @@ def filter_errors_file(FP,FtCnts,Recover=False,Output=None):
             
     '''        
 
-    def mark_errors_sentlines(SentLines,FtCnts=[7,9],Recover=False):
+    def mark_errors_sentlines(SentLines,FtCnts,SentCnt,FstLineNum,Recover=True):
         MkdLines=[]
-        for Line in SentLines:
+        for (Cntr,Line) in enumerate(SentLines):
             Wrong=something_wrong_insideline(Line,FtCnts)
             if not Wrong:
-                MkdLines.append((Line,(True,'original')))
+                MkdLines.append((Line,Line,'original'))
+            # below is when there is something wrong!!!
             else:
                 if Recover:
+                    print('error found ('+Wrong+' at '+str(SentCnt)+'/'+str(FstLineNum+Cntr+1)+'), attempting to recover')
+                    # attempt to recover
                     Attempted=try_and_recover(Line,Wrong)
+                    # it could return none, this is failure
                     if Attempted is None:
-                        MkdLines.append((Line,(False,Wrong)))
-                    elif not something_wrong_insideline(Attempted,FtCnts):
-                        MkdLines.append((Line,(False,Wrong)))
+                        print('recovery failed')
+                        MkdLines.append((Line,None,Wrong))
+                    # it could return something where there still are errors
+                    elif something_wrong_insideline(Attempted,FtCnts):
+                        print('recovery failed')
+                        MkdLines.append((Line,None,Wrong))
+                    # otherwise it's success
                     else:
-                        MkdLines.append((Line,(True,'recovered')))
+                        print('recovery successful')
+                        MkdLines.append((Line,Attempted,'recovered'))
                 else:
-                    MkdLines.append((Line,(False,Wrong)))
+                    MkdLines.append((Line,None,Wrong))
 
         return MkdLines
 
@@ -93,23 +102,30 @@ def filter_errors_file(FP,FtCnts,Recover=False,Output=None):
             
         extract_chunk=lambda FSr: myModule.pop_chunk_from_stream(FSr,Pattern='EOS')
 
-        GoodSents=MkdBadSents=[]; SentCnt=0; NextLine=True
+        MkdSents=[]; SentCnt=LineCnt=0; NextLine=True
         while NextLine:
-            FSr,Sent,_,NextLine=extract_chunk(FSr)
-            if Sent.strip()=='':
-                if Recover:
-                    MkdBadSents.append([(Sent,(False,'empty sent'))])
-            else:
-                SentCnt+=1
-                MkdLines=mark_errors_sentlines(Sent.strip().split('\n'),FtCnts,Recover=Recover)
-                if not(all(MkdLine[1][0] for MkdLine in MkdLines)):
-                    MkdBadSents.append(MkdLines)
+            FSr,Sent,LineCntPerSent,NextLine=extract_chunk(FSr)
+            if NextLine:
+                LineCnt+=LineCntPerSent;SentCnt+=1
+                if Sent.strip()=='':
+                    if Recover:
+                        MkdSents.append([(Sent,None,'empty sent')])
                 else:
-                    GoodSents.append(Sent)
+                    MkdLines=mark_errors_sentlines(Sent.strip().split('\n'),FtCnts,SentCnt,LineCnt,Recover=Recover)
+                    MkdSents.append(MkdLines)
                                        
 
-    return GoodSents,MkdBadSents
+    return MkdSents
 
+
+def remove_badsents(FP,FtCnts):
+    MkdSents=mark_sents(FP,FtCnts)
+    for MkdSent in MkdSents:
+        if any(not MkdLine[1] for MkdLine in MkdSent):
+            pass
+        else:
+            MkdLines='\n'.join([MkdLine[0] for MkdLine in MkdSent])
+            sys.stdout.write(MkdLines+'\nEOS\n')
 
 def something_wrong_insideline(Line,FtCnts):
     if Line.strip()=='':
