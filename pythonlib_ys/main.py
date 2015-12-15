@@ -1,4 +1,4 @@
-import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,inspect,json
+import re,copy, imp,math, datetime,time,itertools, os, sys, subprocess,pickle,inspect,json,shutil
 
 from pdb import set_trace
 
@@ -257,13 +257,19 @@ def number_lines(FP,Ext='numbered',ExtRepl=False):
     FSw.close()
 
 def ask_filenoexist_execute_pickle(FP,Function,ArgsKArgs,Message='Use the old file',TO=10,DefaultReuse=True,Backup=True):
-    Response=ask_filenoexist_execute(FP,Function,ArgsKArgs,Message=Message,TO=TO,DefaultReuse=DefaultReuse,Backup=Backup)
+    Response=ask_filenoexist_execute(FP,Function,ArgsKArgs,Message=Message,TO=TO,DefaultReuse=DefaultReuse,Backup=False)
+    # this means something was returned
     if Response:
+        if os.path.isfile(FP) and Backup:
+            print(FP+' to be backed up with .bak extension')
+            shutil.move(FP,FP+'.bak')
         dump_pickle(Response,FP)
         return Response,False
-    else:
+    elif Response is False:
         Pickle=load_pickle(FP)
         return Pickle,True
+    else:
+        sys.exit('ask_filenoexist_execute_pickle: response empty, nothing to pickle, somehing wrong')
 
 def jsonable_p(Obj,DirectP=True):
     JsonableAtoms=[ 'str', 'int', 'float' ]
